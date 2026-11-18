@@ -5,6 +5,12 @@ on:
     # Runs every 3 hours (at minute 0)
     - cron: '0 */3 * * *'
   workflow_dispatch: # Allows manual run button in GitHub Actions anytime
+    inputs:
+      force:
+        description: 'Force immediate upload (ignore 2.5h spacing)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   upload_next_reel:
@@ -34,7 +40,11 @@ jobs:
           IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
           IG_SESSIONID: ${{ secrets.IG_SESSIONID }}
         run: |
-          python uploader.py --manifest queue/render_manifest.json --test-mode
+          EXTRA_ARGS=""
+          if [ "${{ inputs.force }}" = "true" ]; then
+            EXTRA_ARGS="--force"
+          fi
+          python uploader.py --manifest queue/render_manifest.json --min-interval 2.5 $EXTRA_ARGS
 
       - name: Commit & Push Updated Queue
         run: |

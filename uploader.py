@@ -8,8 +8,13 @@ import sys
 import json
 import time
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
+
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 load_dotenv()
 
@@ -73,7 +78,17 @@ def get_instagram_client():
     return cl
 
 
-def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True):
+def parse_iso_timestamp(ts_str):
+    try:
+        dt = datetime.fromisoformat(ts_str)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone(timedelta(hours=5, minutes=30)))
+        return dt
+    except Exception:
+        return None
+
+
+def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interval_hours=2.5, force=False):
     if not os.path.exists(manifest_path):
         print(f"[ERR] Manifest not found: {manifest_path}")
         return
@@ -97,6 +112,22 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True):
                 }
         except Exception:
             results = []
+
+    # Check minimum interval between uploads
+    if not force and results:
+        published_records = [r for r in results if r.get("status") == "published" and r.get("timestamp")]
+        if published_records:
+            last_pub = published_records[-1]
+            last_ts = parse_iso_timestamp(last_pub.get("timestamp", ""))
+            if last_ts:
+                now_utc = datetime.now(timezone.utc)
+                elapsed_hours = (now_utc.timestamp() - last_ts.timestamp()) / 3600.0
+                if elapsed_hours < min_interval_hours:
+                    remaining_hours = min_interval_hours - elapsed_hours
+                    print(f"[PACING HOLD] Last Reel ('{last_pub.get('title')}') was uploaded {elapsed_hours:.2f}h ago.")
+                    print(f"   Policy requires at least {min_interval_hours:.1f}h spacing between uploads.")
+                    print(f"   Next upload eligible in ~{remaining_hours:.1f} hour(s). Exiting cleanly until next cron window.")
+                    return
 
     # Find the next unposted clip
     target_clip = None
@@ -165,7 +196,7 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True):
             "status": "published",
             "media_id": str(media_id),
             "url": post_url,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
 
         with open(RESULTS_FILE, "w", encoding="utf-8") as f:
@@ -187,7 +218,7 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True):
             "title": title,
             "status": "failed",
             "error": str(e),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
         with open(RESULTS_FILE, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
@@ -199,6 +230,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", default=DEFAULT_MANIFEST)
     parser.add_argument("--test-mode", action="store_true", default=True)
+    parser.add_argument("--min-interval", type=float, default=2.5, help="Minimum interval in hours between uploads")
+    parser.add_argument("--force", action="store_true", help="Force upload now, ignoring interval")
     args = parser.parse_args()
 
-    run_cloud_upload(manifest_path=args.manifest, test_mode=args.test_mode)
+    run_cloud_upload(
+        manifest_path=args.manifest,
+        test_mode=args.test_mode,
+        min_interval_hours=args.min_interval,
+        force=args.force
+    )
