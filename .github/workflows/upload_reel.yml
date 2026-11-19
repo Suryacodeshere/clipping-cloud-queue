@@ -2,8 +2,8 @@ name: 24/7 Instagram Reel Cloud Uploader
 
 on:
   schedule:
-    # Runs every 3 hours (at minute 0)
-    - cron: '0 */3 * * *'
+    # Runs hourly (at minute 25) to avoid top-of-the-hour congestion; uploader enforces 2.5h pacing
+    - cron: '25 * * * *'
   workflow_dispatch: # Allows manual run button in GitHub Actions anytime
     inputs:
       force:

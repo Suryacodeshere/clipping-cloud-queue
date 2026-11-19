@@ -1,3 +1,4 @@
 __pycache__/
 *.pyc
 .env
+queue/ig_session.json

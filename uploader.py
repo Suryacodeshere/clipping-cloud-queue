@@ -78,6 +78,12 @@ def get_instagram_client():
     return cl
 
 
+def safe_basename(path_str):
+    if not path_str:
+        return None
+    return path_str.replace("\\", "/").rstrip("/").split("/")[-1]
+
+
 def parse_iso_timestamp(ts_str):
     try:
         dt = datetime.fromisoformat(ts_str)
@@ -140,9 +146,9 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
         if title and title.strip().lower() in published_titles:
             continue
 
-        # Resolve path within queue directory
+        # Resolve path within queue directory (using safe_basename for cross-platform Linux/Windows support)
         raw_vpath = clip.get("output_file") or clip.get("video_path")
-        vname = os.path.basename(raw_vpath) if raw_vpath else None
+        vname = safe_basename(raw_vpath)
         vpath = os.path.join("queue", vname) if vname else None
 
         if not vpath or not os.path.exists(vpath):
@@ -150,7 +156,7 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
             continue
 
         raw_tpath = clip.get("thumbnail_path")
-        tname = os.path.basename(raw_tpath) if raw_tpath else None
+        tname = safe_basename(raw_tpath)
         tpath = os.path.join("queue", tname) if tname and os.path.exists(os.path.join("queue", tname)) else None
 
         target_clip = clip
@@ -160,6 +166,12 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
         break
 
     if not target_clip:
+        unposted = [
+            c for c in clips
+            if (c.get("title") or c.get("youtube_title_final") or c.get("title_inggris", "")).strip().lower() not in published_titles
+        ]
+        if unposted:
+            raise FileNotFoundError(f"Found {len(unposted)} pending clips in manifest, but their video files were not found in queue/ directory!")
         print("[OK] All clips in queue have already been published! Nothing left to upload.")
         return
 
