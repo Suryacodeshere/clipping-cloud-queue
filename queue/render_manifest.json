@@ -822,5 +822,33 @@
     "video_exists": true,
     "thumbnail_exists": true,
     "source_url": "https://www.youtube.com/watch?v=irNhWMG560k"
+  },
+  {
+    "rank": 12,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/carry_rank_2_ready.mp4",
+    "thumbnail_path": "queue/carry_thumbnail_rank_2.jpg",
+    "thumbnail_text": "GTA 6: Grandma Gets a Savage Throw!",
+    "youtube_title_final": "GTA 6: Grandma Gets a Savage Throw!",
+    "youtube_description_final": "First 5 minutes into GTA 6 and I'm already throwing grandmas! 😂 This game is WILD! 👵💥 #GTA6Fails #StreamerReacts #SavageGaming #NPCGoneWrong #IndianGaming",
+    "youtube_tags_final": [
+      "GTA6",
+      "CarryMinati",
+      "GamingLaunch",
+      "IndianGamer",
+      "GTA6Gameplay"
+    ],
+    "tiktok_caption_final": "First 5 minutes into GTA 6 and I'm already throwing grandmas! 😂 This game is WILD! 👵💥 #GTA6Fails #StreamerReacts #SavageGaming #NPCGoneWrong #IndianGaming",
+    "title_indonesia": "GTA 6: Grandma Gets a Savage Throw!",
+    "title_inggris": "GTA 6: Grandma Gets a Savage Throw!",
+    "hastag": "#GTA6 #CarryMinati #GamingLaunch #IndianGamer #GTA6Gameplay",
+    "start_time": 5081.8,
+    "end_time": 5123.2,
+    "duration": 41.4,
+    "alasan": "This is a classic GTA chaotic moment. The streamer's casual 'buddhiya hai' (it's an old lady) followed by picking her up and throwing her is unexpected and hilarious, showcasing the immediate freedom and potential for mayhem in the game. It's pure, unscripted comedy.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://www.youtube.com/watch?v=irNhWMG560k"
   }
 ]
