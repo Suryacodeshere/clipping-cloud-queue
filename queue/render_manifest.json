@@ -962,5 +962,33 @@
     "video_exists": true,
     "thumbnail_exists": true,
     "source_url": "https://www.youtube.com/watch?v=irNhWMG560k"
+  },
+  {
+    "rank": 17,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/stream2_rank_1_ready.mp4",
+    "thumbnail_path": "queue/stream2_thumbnail_rank_1.jpg",
+    "thumbnail_text": "GTA 6 Robbery Gone WRONG! Police Everywhere!",
+    "youtube_title_final": "GTA 6 Robbery Gone WRONG! Police Everywhere!",
+    "youtube_description_final": "This GTA 6 robbery escalated SO fast! 🚨 Cops showed up out of nowhere! My heart was POUNDING! #GTA6 #GamingFails #StreamerReacts #Chaos",
+    "youtube_tags_final": [
+      "GTA6",
+      "GamingMoments",
+      "GTA6Fails",
+      "Chaos",
+      "GamerReacts"
+    ],
+    "tiktok_caption_final": "This GTA 6 robbery escalated SO fast! 🚨 Cops showed up out of nowhere! My heart was POUNDING! #GTA6 #GamingFails #StreamerReacts #Chaos",
+    "title_indonesia": "GTA 6 Robbery Gone WRONG! Police Everywhere!",
+    "title_inggris": "GTA 6 Robbery Gone WRONG! Police Everywhere!",
+    "hastag": "#GTA6 #GamingMoments #GTA6Fails #Chaos #GamerReacts",
+    "start_time": 915.0,
+    "end_time": 971.0,
+    "duration": 56.0,
+    "alasan": "The sudden, high-energy robbery sequence combined with the streamer's panicked reactions and the immediate, chaotic arrival of the police creates a dramatic and hilarious moment.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://www.youtube.com/watch?v=QjbepgVChIA"
   }
 ]
