@@ -850,5 +850,33 @@
     "video_exists": true,
     "thumbnail_exists": true,
     "source_url": "https://www.youtube.com/watch?v=irNhWMG560k"
+  },
+  {
+    "rank": 13,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/carry_rank_3_ready.mp4",
+    "thumbnail_path": "queue/carry_thumbnail_rank_3.jpg",
+    "thumbnail_text": "From GTA 5 Kid to GTA 6 Legend: My Journey!",
+    "youtube_title_final": "From GTA 5 Kid to GTA 6 Legend: My Journey!",
+    "youtube_description_final": "13 years later, my childhood dream comes true with GTA 6! 🥹 This isn't just a game, it's a whole era! So much emotion right now. ❤️ #GTA6 #ChildhoodDream #GamingJourney #EmotionalMoment #IndianStreamer",
+    "youtube_tags_final": [
+      "GTA6",
+      "CarryMinati",
+      "GamingLaunch",
+      "IndianGamer",
+      "GTA6Gameplay"
+    ],
+    "tiktok_caption_final": "13 years later, my childhood dream comes true with GTA 6! 🥹 This isn't just a game, it's a whole era! So much emotion right now. ❤️ #GTA6 #ChildhoodDream #GamingJourney #EmotionalMoment #IndianStreamer",
+    "title_indonesia": "From GTA 5 Kid to GTA 6 Legend: My Journey!",
+    "title_inggris": "From GTA 5 Kid to GTA 6 Legend: My Journey!",
+    "hastag": "#GTA6 #CarryMinati #GamingLaunch #IndianGamer #GTA6Gameplay",
+    "start_time": 5171.7,
+    "end_time": 5216.6,
+    "duration": 44.9,
+    "alasan": "This clip is highly dramatic and emotional, resonating with long-time GTA fans. The streamer's heartfelt reflection on his journey from playing GTA 5 as a 13-year-old to launching GTA 6 as a successful streamer creates a powerful, relatable narrative of passion and perseverance in gaming.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://www.youtube.com/watch?v=irNhWMG560k"
   }
 ]
