@@ -795,5 +795,32 @@
     "video_exists": true,
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/169ZzvPxvvM"
+  },
+  {
+    "rank": 11,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/carry_rank_1_ready.mp4",
+    "thumbnail_path": "queue/carry_thumbnail_rank_1.jpg",
+    "thumbnail_text": "GTA 6 Launch Hype: The Final Countdown!",
+    "youtube_title_final": "GTA 6 Launch Hype: The Final Countdown!",
+    "youtube_description_final": "The moment we've all been waiting for! 🤩 30 seconds to GTA 6! The energy is UNREAL! 🔥 #GTA6 #GamingLaunch #IndianGamer #HypeBeast #NewEra",
+    "youtube_tags_final": [
+      "GTA6",
+      "CarryMinati",
+      "GamingMoments",
+      "GTA6Launch"
+    ],
+    "tiktok_caption_final": "The moment we've all been waiting for! 🤩 30 seconds to GTA 6! The energy is UNREAL! 🔥 #GTA6 #GamingLaunch #IndianGamer #HypeBeast #NewEra",
+    "title_indonesia": "GTA 6 Launch Hype: The Final Countdown!",
+    "title_inggris": "GTA 6 Launch Hype: The Final Countdown!",
+    "hastag": "#GTA6 #CarryMinati #GamingMoments #ViralGaming",
+    "start_time": 251.5,
+    "end_time": 288.2,
+    "duration": 36.7,
+    "alasan": "This clip captures the peak excitement and anticipation of the GTA 6 launch. The streamer's high-energy countdown, culminating in a dramatic 'Swaha!', is incredibly engaging and relatable for any gamer who has waited years for a new title. It's a pure, unadulterated moment of gaming history.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://www.youtube.com/watch?v=irNhWMG560k"
   }
 ]
