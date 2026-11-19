@@ -934,5 +934,33 @@
     "video_exists": true,
     "thumbnail_exists": true,
     "source_url": "https://www.youtube.com/watch?v=irNhWMG560k"
+  },
+  {
+    "rank": 16,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/carry_rank_6_ready.mp4",
+    "thumbnail_path": "queue/carry_thumbnail_rank_6.jpg",
+    "thumbnail_text": "Chat Made Me Take a Shower in GTA 6! (Streamer's Hilarious Reaction)",
+    "youtube_title_final": "Chat Made Me Take a Shower in GTA 6! (Streamer's Hilarious Reaction)",
+    "youtube_description_final": "When chat tells you to take a shower in GTA 6 and you realize their true intentions! 🤣 My stream almost got deleted! 🚿 #GTA6Funny #StreamerReacts #ChatWins #IndianGamer #HilariousMoments",
+    "youtube_tags_final": [
+      "GTA6",
+      "CarryMinati",
+      "GamingLaunch",
+      "IndianGamer",
+      "GTA6Gameplay"
+    ],
+    "tiktok_caption_final": "When chat tells you to take a shower in GTA 6 and you realize their true intentions! 🤣 My stream almost got deleted! 🚿 #GTA6Funny #StreamerReacts #ChatWins #IndianGamer #HilariousMoments",
+    "title_indonesia": "Chat Made Me Take a Shower in GTA 6! (Streamer's Hilarious Reaction)",
+    "title_inggris": "Chat Made Me Take a Shower in GTA 6! (Streamer's Hilarious Reaction)",
+    "hastag": "#GTA6 #CarryMinati #GamingLaunch #IndianGamer #GTA6Gameplay",
+    "start_time": 4648.1,
+    "end_time": 4690.1,
+    "duration": 42.0,
+    "alasan": "This clip is a classic streamer-chat interaction moment. The streamer's initial confusion, followed by his hilarious realization of why chat wanted him to take a shower in-game, and his dramatic overreaction about the stream being deleted, creates a highly entertaining and relatable scenario for any live stream viewer.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://www.youtube.com/watch?v=irNhWMG560k"
   }
 ]
