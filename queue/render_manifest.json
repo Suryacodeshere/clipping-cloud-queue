@@ -1117,5 +1117,37 @@
     "video_exists": true,
     "thumbnail_exists": true,
     "source_url": "https://www.youtube.com/watch?v=QjbepgVChIA"
+  },
+  {
+    "rank": 21,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/stream2_rank_5_ready.mp4",
+    "thumbnail_path": "queue/stream2_thumbnail_rank_5.jpg",
+    "thumbnail_text": "The absolute worst pain every gamer knows too well 💀😭",
+    "youtube_title_final": "The absolute worst pain every gamer knows too well 💀😭",
+    "youtube_description_final": "The absolute worst pain every gamer knows too well 💀😭\n4 hours of GTA 6 progress vanished in 1 second 💔\nHas this ever happened to you? 😭👇\n\n#gta6 #gamers #streamerfails #gaming #viral #reels #explorepage #fyp #pain #gaminglife",
+    "youtube_tags_final": [
+      "gta6",
+      "gamers",
+      "streamerfails",
+      "gaming",
+      "viral",
+      "reels",
+      "explorepage",
+      "fyp"
+    ],
+    "tiktok_caption_final": "The absolute worst pain every gamer knows too well 💀😭\n4 hours of GTA 6 progress vanished in 1 second 💔\nHas this ever happened to you? 😭👇\n\n#gta6 #gamers #streamerfails #gaming #viral #reels #explorepage #fyp #pain #gaminglife",
+    "tiktok_caption": "The absolute worst pain every gamer knows too well 💀😭\n4 hours of GTA 6 progress vanished in 1 second 💔\nHas this ever happened to you? 😭👇\n\n#gta6 #gamers #streamerfails #gaming #viral #reels #explorepage #fyp #pain #gaminglife",
+    "title_indonesia": "The absolute worst pain every gamer knows too well 💀😭",
+    "title_inggris": "The absolute worst pain every gamer knows too well 💀😭",
+    "hastag": "#gta6 #gamers #streamerfails #gaming #viral #reels #explorepage #fyp",
+    "start_time": 14991.0,
+    "end_time": 15041.5,
+    "duration": 50.5,
+    "alasan": "The dramatic and relatable moment where the streamer slowly realizes the game hasn't auto-saved, leading to a panicked \"Why? Why? Why?\" and the crushing realization of lost progress, is a universally hilarious (and tragic) gamer experience.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://www.youtube.com/watch?v=QjbepgVChIA"
   }
 ]
