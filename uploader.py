@@ -116,32 +116,56 @@ def get_youtube_client():
 def upload_youtube_short(youtube, video_path, clip_data):
     from googleapiclient.http import MediaFileUpload
 
-    title = (
+    raw_title = (
         clip_data.get("youtube_title_final")
         or clip_data.get("title")
-        or clip_data.get("title_inggris", "GTA 6 Highlight")
+        or clip_data.get("title_inggris", "GTA 6 Gameplay Highlight")
     )
-    if "#Shorts" not in title and "#shorts" not in title:
-        title = f"{title[:88]} #Shorts"
 
-    desc = (
+    # 1. Title SEO Optimization
+    title = raw_title.strip()
+    if "GTA 6" not in title and "GTA" not in title:
+        title = f"GTA 6 - {title}"
+    if "#Shorts" not in title and "#shorts" not in title:
+        title = f"{title[:88].rstrip()} #Shorts"
+
+    # 2. Description SEO Structure
+    raw_desc = (
         clip_data.get("youtube_description_final", "")
         or clip_data.get("tiktok_caption_final", "")
-        or title
+        or raw_title
     )
-    if "#Shorts" not in desc:
-        desc = f"{desc}
+    clean_desc_lines = [l for l in raw_desc.splitlines() if not l.strip().startswith("#")]
+    hook_desc = "\n".join(clean_desc_lines).strip()
 
-#Shorts #GTA6 #Gaming #ShortsFeed"
+    seo_description = f"""{hook_desc}
 
-    raw_tags = clip_data.get("youtube_tags_final") or clip_data.get("tags") or []
-    tags = [str(t).strip() for t in raw_tags if str(t).strip()][:10]
+🎮 Game: Grand Theft Auto VI (GTA 6)
+🔥 Streamer Gameplay Highlights & Viral Moments
+🔔 Subscribe to @bubucreates-p3c for daily GTA 6 Shorts, epic fails & gameplay moments!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+#Shorts #GTA6 #GTAVI #Gaming #TechnoGamerz #CarryMinati #Mythpat #GamingShorts #ShortsFeed #ViceCity""".strip()
+
+    # 3. Rich SEO Tags Stack
+    base_tags = [
+        "GTA 6", "Grand Theft Auto VI", "GTA 6 Gameplay", "GTA 6 Shorts",
+        "GTA 6 Clips", "Gaming", "Gaming Shorts", "Shorts", "Vice City",
+        "Techno Gamerz", "Techno Gamerz GTA 6", "CarryMinati", "Carry GTA 6",
+        "Mythpat", "Mythpat GTA 6", "GTA 6 Supercar", "GTA 6 Police Chase",
+        "Viral Shorts", "Trending Gaming"
+    ]
+    clip_tags = clip_data.get("youtube_tags_final") or clip_data.get("tags") or []
+    for ct in clip_tags:
+        ct_clean = str(ct).replace("#", "").strip()
+        if ct_clean and ct_clean.lower() not in [t.lower() for t in base_tags]:
+            base_tags.append(ct_clean)
 
     body = {
         "snippet": {
             "title": title[:100],
-            "description": desc,
-            "tags": tags,
+            "description": seo_description,
+            "tags": base_tags[:25],
             "categoryId": "20",  # Gaming
             "defaultLanguage": "en",
         },
@@ -151,7 +175,8 @@ def upload_youtube_short(youtube, video_path, clip_data):
         },
     }
 
-    print(f"\n[YOUTUBE UPLOAD] Publishing Short: {title}")
+    print(f"\n[YOUTUBE UPLOAD] Publishing SEO-Optimized Short: {title}")
+    print(f"   Tags ({len(base_tags[:25])} tags): {', '.join(base_tags[:8])}...")
     media = MediaFileUpload(video_path, chunksize=8 * 1024 * 1024, resumable=True)
     request = youtube.videos().insert(
         part="snippet,status",
