@@ -2,15 +2,20 @@ name: 24/7 Instagram Reel Cloud Uploader
 
 on:
   schedule:
-    # Runs every 20 minutes so uploads fire promptly the moment the 2.5h pacing window opens
+    # Backup internal cron (runs every 20 mins)
     - cron: '*/20 * * * *'
-  workflow_dispatch: # Allows manual run button in GitHub Actions anytime
+  workflow_dispatch: # Primary trigger via external webhook (cron-job.org)
     inputs:
       force:
         description: 'Force immediate upload (ignore 2.5h spacing)'
         required: false
         type: boolean
         default: false
+
+# Prevent overlapping runs from colliding on git commits or uploads
+concurrency:
+  group: instagram-upload-queue
+  cancel-in-progress: false
 
 jobs:
   upload_next_reel:
@@ -55,5 +60,6 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "Auto-published next Instagram Reel & cleaned up queue [auto-queue]"
-            git push
+            git pull --rebase origin main
+            git push origin main
           fi
