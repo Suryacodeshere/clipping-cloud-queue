@@ -1053,5 +1053,37 @@
     "video_exists": true,
     "thumbnail_exists": true,
     "source_url": "https://www.youtube.com/watch?v=QjbepgVChIA"
+  },
+  {
+    "rank": 19,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/stream2_rank_3_ready.mp4",
+    "thumbnail_path": "queue/stream2_thumbnail_rank_3.jpg",
+    "thumbnail_text": "Rule #1 of GTA: NEVER get out of the boat 💀🚤",
+    "youtube_title_final": "Rule #1 of GTA: NEVER get out of the boat 💀🚤",
+    "youtube_description_final": "Rule #1 of GTA: NEVER get out of the boat 💀🚤\nBro did exactly what he was told NOT to do 😭\nTag that friend who always ruins the heist 👇\n\n#gta6 #gaming #reels #viral #explorepage #fyp #gta #gamingcommunity #funnyvideos",
+    "youtube_tags_final": [
+      "gta6",
+      "gaming",
+      "reels",
+      "viral",
+      "explorepage",
+      "fyp",
+      "gta",
+      "gamingcommunity"
+    ],
+    "tiktok_caption_final": "Rule #1 of GTA: NEVER get out of the boat 💀🚤\nBro did exactly what he was told NOT to do 😭\nTag that friend who always ruins the heist 👇\n\n#gta6 #gaming #reels #viral #explorepage #fyp #gta #gamingcommunity #funnyvideos",
+    "tiktok_caption": "Rule #1 of GTA: NEVER get out of the boat 💀🚤\nBro did exactly what he was told NOT to do 😭\nTag that friend who always ruins the heist 👇\n\n#gta6 #gaming #reels #viral #explorepage #fyp #gta #gamingcommunity #funnyvideos",
+    "title_indonesia": "Rule #1 of GTA: NEVER get out of the boat 💀🚤",
+    "title_inggris": "Rule #1 of GTA: NEVER get out of the boat 💀🚤",
+    "hastag": "#gta6 #gaming #reels #viral #explorepage #fyp #gta #gamingcommunity",
+    "start_time": 1745.2,
+    "end_time": 1794.0,
+    "duration": 48.8,
+    "alasan": "The sidekick's escalating fear and the delivery of the classic \"Never get out of the boat\" line, immediately followed by the protagonist doing exactly that, creates a perfectly timed comedic and dramatic sequence.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://www.youtube.com/watch?v=QjbepgVChIA"
   }
 ]
