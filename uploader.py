@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-uploader.py — 24/7 Cloud Uploader for Instagram Reels (Runs on GitHub Actions)
+uploader.py — 24/7 Cloud Uploader for Instagram Reels & YouTube Shorts (Runs on GitHub Actions)
 """
 
 import os
@@ -21,6 +21,7 @@ load_dotenv()
 SESSION_FILE = "queue/ig_session.json"
 DEFAULT_MANIFEST = "queue/render_manifest.json"
 RESULTS_FILE = "queue/instagram_upload_results.json"
+YT_RESULTS_FILE = "queue/youtube_upload_results.json"
 
 
 def get_instagram_client():
@@ -76,6 +77,99 @@ def get_instagram_client():
         raise ValueError(f"Account check failed: got @{actual_username}, expected @chicanayaa")
 
     return cl
+
+
+def get_youtube_client():
+    token_str = os.getenv("YOUTUBE_TOKEN", "").strip()
+    if not token_str:
+        if os.path.exists("queue/youtube_token.json"):
+            with open("queue/youtube_token.json", "r", encoding="utf-8") as f:
+                token_str = f.read()
+
+    if not token_str:
+        print("[INFO] No YOUTUBE_TOKEN found in environment. Skipping YouTube Shorts upload.")
+        return None
+
+    try:
+        from google.auth.transport.requests import Request
+        from google.oauth2.credentials import Credentials
+        from googleapiclient.discovery import build
+
+        token_data = json.loads(token_str)
+        scopes = [
+            "https://www.googleapis.com/auth/youtube.upload",
+            "https://www.googleapis.com/auth/youtube.readonly",
+        ]
+        creds = Credentials.from_authorized_user_info(token_data, scopes)
+        if not creds.valid and creds.refresh_token:
+            print("[INFO] Refreshing YouTube OAuth token...")
+            creds.refresh(Request())
+
+        yt = build("youtube", "v3", credentials=creds)
+        print("[OK] YouTube API client authenticated successfully!")
+        return yt
+    except Exception as e:
+        print(f"[WARN] Failed to initialize YouTube client: {e}")
+        return None
+
+
+def upload_youtube_short(youtube, video_path, clip_data):
+    from googleapiclient.http import MediaFileUpload
+
+    title = (
+        clip_data.get("youtube_title_final")
+        or clip_data.get("title")
+        or clip_data.get("title_inggris", "GTA 6 Highlight")
+    )
+    if "#Shorts" not in title and "#shorts" not in title:
+        title = f"{title[:88]} #Shorts"
+
+    desc = (
+        clip_data.get("youtube_description_final", "")
+        or clip_data.get("tiktok_caption_final", "")
+        or title
+    )
+    if "#Shorts" not in desc:
+        desc = f"{desc}
+
+#Shorts #GTA6 #Gaming #ShortsFeed"
+
+    raw_tags = clip_data.get("youtube_tags_final") or clip_data.get("tags") or []
+    tags = [str(t).strip() for t in raw_tags if str(t).strip()][:10]
+
+    body = {
+        "snippet": {
+            "title": title[:100],
+            "description": desc,
+            "tags": tags,
+            "categoryId": "20",  # Gaming
+            "defaultLanguage": "en",
+        },
+        "status": {
+            "privacyStatus": "public",
+            "selfDeclaredMadeForKids": False,
+        },
+    }
+
+    print(f"\n[YOUTUBE UPLOAD] Publishing Short: {title}")
+    media = MediaFileUpload(video_path, chunksize=8 * 1024 * 1024, resumable=True)
+    request = youtube.videos().insert(
+        part="snippet,status",
+        body=body,
+        media_body=media,
+        notifySubscribers=True,
+    )
+
+    response = None
+    while response is None:
+        status, response = request.next_chunk()
+        if status:
+            print(f"   YouTube upload progress: {int(status.progress() * 100)}%")
+
+    video_id = response.get("id")
+    yt_url = f"https://youtube.com/shorts/{video_id}"
+    print(f"[SUCCESS] YouTube Short Live: {yt_url}")
+    return {"video_id": video_id, "url": yt_url, "title": title}
 
 
 def safe_basename(path_str):
@@ -146,7 +240,6 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
         if title and title.strip().lower() in published_titles:
             continue
 
-        # Resolve path within queue directory (using safe_basename for cross-platform Linux/Windows support)
         raw_vpath = clip.get("output_file") or clip.get("video_path")
         vname = safe_basename(raw_vpath)
         vpath = os.path.join("queue", vname) if vname else None
@@ -182,11 +275,40 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
         tag_str = " ".join(f"#{t.replace(' ', '')}" for t in tags[:5])
         caption = f"{caption}\n\n{tag_str}"
 
-    print(f"\n[CLOUD UPLOAD] Publishing next Reel to @chicanayaa: {title}")
+    print(f"\n[CLOUD UPLOAD] Publishing next Clip: {title}")
     print(f"   Video: {target_video_path}")
     if target_thumb_path:
         print(f"   Thumbnail: {target_thumb_path}")
 
+    # 1. Upload to YouTube Shorts (if configured)
+    yt_client = get_youtube_client()
+    yt_data = None
+    if yt_client:
+        try:
+            yt_data = upload_youtube_short(yt_client, target_video_path, target_clip)
+            # Save to youtube results file
+            yt_results = []
+            if os.path.exists(YT_RESULTS_FILE):
+                try:
+                    with open(YT_RESULTS_FILE, "r", encoding="utf-8") as yf:
+                        yt_results = json.load(yf)
+                except Exception:
+                    yt_results = []
+            yt_results.append({
+                "clip_index": target_index,
+                "video": target_video_path,
+                "title": yt_data["title"],
+                "video_id": yt_data["video_id"],
+                "url": yt_data["url"],
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+            with open(YT_RESULTS_FILE, "w", encoding="utf-8") as yf:
+                json.dump(yt_results, yf, indent=2)
+        except Exception as e:
+            print(f"[WARN] YouTube upload failed: {e}")
+
+    # 2. Upload to Instagram Reels
+    print(f"\n[INSTAGRAM UPLOAD] Publishing Reel to @chicanayaa: {title}")
     cl = get_instagram_client()
 
     upload_kwargs = {"path": target_video_path, "caption": caption}
@@ -199,9 +321,9 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
         media_code = getattr(media, "code", "")
         post_url = f"https://www.instagram.com/reel/{media_code}/" if media_code else ""
 
-        print(f"\n[SUCCESS] Reel Published! {post_url}")
+        print(f"\n[SUCCESS] Instagram Reel Published! {post_url}")
 
-        results.append({
+        result_entry = {
             "clip_index": target_index,
             "video": target_video_path,
             "title": title,
@@ -209,7 +331,11 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
             "media_id": str(media_id),
             "url": post_url,
             "timestamp": datetime.now(timezone.utc).isoformat()
-        })
+        }
+        if yt_data:
+            result_entry["youtube_url"] = yt_data["url"]
+
+        results.append(result_entry)
 
         with open(RESULTS_FILE, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
@@ -223,7 +349,7 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
             print(f"   Deleted thumbnail: {target_thumb_path}")
 
     except Exception as e:
-        print(f"[ERR] Upload failed: {e}")
+        print(f"[ERR] Instagram upload failed: {e}")
         results.append({
             "clip_index": target_index,
             "video": target_video_path,
