@@ -1756,5 +1756,37 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/E3oG313_kps",
     "content_type": "podcast"
+  },
+  {
+    "rank": 41,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/khan_sir_rank_2_ready.mp4",
+    "thumbnail_path": "queue/khan_sir_thumb_rank_2.jpg",
+    "thumbnail_text": "World War 4 Lathiyon Se Hoga! 💣⚔️",
+    "youtube_title_final": "World War 4 Lathiyon Se Hoga! 💣⚔️",
+    "youtube_description_final": "Khan Sir explains how defense industries sell fear like torches in the dark and why World War 4 will take us back to the Stone Age! 😱\n\nWhat are your thoughts on global arms industries?\n\n#khansir #worldwar3 #geopolitics #podcast #viral #shorts #reels",
+    "youtube_tags_final": [
+      "khansir",
+      "worldwar3",
+      "geopolitics",
+      "defense",
+      "podcast",
+      "viral",
+      "shorts"
+    ],
+    "tiktok_caption_final": "Khan Sir explains how defense industries sell fear like torches in the dark and why World War 4 will take us back to the Stone Age! 😱\n\nWhat are your thoughts on global arms industries?\n\n#khansir #worldwar3 #geopolitics #podcast #viral #shorts #reels",
+    "tiktok_caption": "Khan Sir explains how defense industries sell fear like torches in the dark and why World War 4 will take us back to the Stone Age! 😱\n\nWhat are your thoughts on global arms industries?\n\n#khansir #worldwar3 #geopolitics #podcast #viral #shorts #reels",
+    "title_indonesia": "World War 4 Lathiyon Se Hoga! 💣⚔️",
+    "title_inggris": "World War 4 Lathiyon Se Hoga! 💣⚔️",
+    "hastag": "#khansir #worldwar3 #geopolitics #defense #podcast #viral #shorts",
+    "start_time": 2031.0,
+    "end_time": 2075.0,
+    "duration": 44.0,
+    "alasan": "Includes a famous philosophical hook about World War 4 paired with Khan Sir's signature metaphor on how weapon companies profit from fear.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/E3oG313_kps",
+    "content_type": "podcast"
   }
 ]
