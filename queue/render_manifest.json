@@ -3344,5 +3344,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/LhgEfBXWfak",
     "content_type": "podcast"
+  },
+  {
+    "rank": 92,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/vikas_divyakirti_rank_9_ready.mp4",
+    "thumbnail_path": "queue/vikas_divyakirti_thumb_rank_9.jpg",
+    "thumbnail_text": "Future Cinema: Neuro-Films 🧠🎬",
+    "youtube_title_final": "Future Cinema: Neuro-Films 🧠🎬",
+    "youtube_description_final": "What if movies could read your emotions and change the ending in real-time? The future of cinema is terrifyingly cool. Would you watch it? 🤖\n\n#futuretech #cinema #neuroscience #scifi #tech",
+    "youtube_tags_final": [
+      "vikasdivyakirti",
+      "rajshamani",
+      "technology",
+      "future",
+      "movies",
+      "innovation"
+    ],
+    "tiktok_caption_final": "What if movies could read your emotions and change the ending in real-time? The future of cinema is terrifyingly cool. Would you watch it? 🤖\n\n#futuretech #cinema #neuroscience #scifi #tech",
+    "tiktok_caption": "What if movies could read your emotions and change the ending in real-time? The future of cinema is terrifyingly cool. Would you watch it? 🤖\n\n#futuretech #cinema #neuroscience #scifi #tech",
+    "title_indonesia": "Future Cinema: Neuro-Films 🧠🎬",
+    "title_inggris": "Future Cinema: Neuro-Films 🧠🎬",
+    "hastag": "#vikasdivyakirti #rajshamani #technology #future #movies #innovation",
+    "start_time": 536.7,
+    "end_time": 563.8,
+    "duration": 27.1,
+    "alasan": "The concept of neuro-cinemas is a 'pattern interrupt' that captures attention instantly through sci-fi elements.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/LhgEfBXWfak",
+    "content_type": "podcast"
   }
 ]
