@@ -3496,5 +3496,35 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/fHBR1j1kJ1I",
     "content_type": "podcast"
+  },
+  {
+    "rank": 97,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/dr_sweta_rank_7_ready.mp4",
+    "thumbnail_path": "queue/dr_sweta_thumb_rank_7.jpg",
+    "thumbnail_text": "The Billionaire Formula 💸",
+    "youtube_title_final": "The Billionaire Formula 💸",
+    "youtube_description_final": "What does it take to actually succeed? It’s not just luck. Here is the brain-based formula for turning failures into stepping stones. \n\n#successformula #billionairebrain #growthmindset #entrepreneur #drsweta #rajshamani",
+    "youtube_tags_final": [
+      "billionaire",
+      "mindset",
+      "success",
+      "neuroscience",
+      "shorts"
+    ],
+    "tiktok_caption_final": "What does it take to actually succeed? It’s not just luck. Here is the brain-based formula for turning failures into stepping stones. \n\n#successformula #billionairebrain #growthmindset #entrepreneur #drsweta #rajshamani",
+    "tiktok_caption": "What does it take to actually succeed? It’s not just luck. Here is the brain-based formula for turning failures into stepping stones. \n\n#successformula #billionairebrain #growthmindset #entrepreneur #drsweta #rajshamani",
+    "title_indonesia": "The Billionaire Formula 💸",
+    "title_inggris": "The Billionaire Formula 💸",
+    "hastag": "#billionaire #mindset #success #neuroscience #shorts",
+    "start_time": 1690.0,
+    "end_time": 1735.0,
+    "duration": 45.0,
+    "alasan": "Directly links to the video's title theme and provides a punchy, aspirational summary of success.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/fHBR1j1kJ1I",
+    "content_type": "podcast"
   }
 ]
