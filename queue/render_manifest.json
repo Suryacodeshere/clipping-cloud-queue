@@ -3251,5 +3251,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/LhgEfBXWfak",
     "content_type": "podcast"
+  },
+  {
+    "rank": 89,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/vikas_divyakirti_rank_6_ready.mp4",
+    "thumbnail_path": "queue/vikas_divyakirti_thumb_rank_6.jpg",
+    "thumbnail_text": "Are You in 'Form'? 🏏✨",
+    "youtube_title_final": "Are You in 'Form'? 🏏✨",
+    "youtube_description_final": "Ever wondered why even the best players hit a slump? It’s not just skill—it’s about mind-body synergy. How to find your flow state? 🧠\n\n#flowstate #peakperformance #sportspsychology #viratkohli #success",
+    "youtube_tags_final": [
+      "vikasdivyakirti",
+      "rajshamani",
+      "psychology",
+      "form",
+      "performance",
+      "sports"
+    ],
+    "tiktok_caption_final": "Ever wondered why even the best players hit a slump? It’s not just skill—it’s about mind-body synergy. How to find your flow state? 🧠\n\n#flowstate #peakperformance #sportspsychology #viratkohli #success",
+    "tiktok_caption": "Ever wondered why even the best players hit a slump? It’s not just skill—it’s about mind-body synergy. How to find your flow state? 🧠\n\n#flowstate #peakperformance #sportspsychology #viratkohli #success",
+    "title_indonesia": "Are You in 'Form'? 🏏✨",
+    "title_inggris": "Are You in 'Form'? 🏏✨",
+    "hastag": "#vikasdivyakirti #rajshamani #psychology #form #performance #sports",
+    "start_time": 191.8,
+    "end_time": 235.2,
+    "duration": 43.4,
+    "alasan": "Explaining the abstract concept of 'being in form' using sports examples is highly relatable for high-performers.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/LhgEfBXWfak",
+    "content_type": "podcast"
   }
 ]
