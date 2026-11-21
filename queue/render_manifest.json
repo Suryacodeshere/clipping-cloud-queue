@@ -3466,5 +3466,35 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/fHBR1j1kJ1I",
     "content_type": "podcast"
+  },
+  {
+    "rank": 96,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/dr_sweta_rank_6_ready.mp4",
+    "thumbnail_path": "queue/dr_sweta_thumb_rank_6.jpg",
+    "thumbnail_text": "Stop the Limbic Loop 🚫",
+    "youtube_title_final": "Stop the Limbic Loop 🚫",
+    "youtube_description_final": "Is your brain stuck in a 'fight or flight' loop? 🧠 Most people waste 90% of their brain capacity on useless rumination. Break the cycle!\n\n#mentalhealth #anxietyrelief #neuroscience #breakthehabit #lifetips #shorts",
+    "youtube_tags_final": [
+      "mentalhealth",
+      "neuroscience",
+      "overthinking",
+      "habitbuilding",
+      "drsweta"
+    ],
+    "tiktok_caption_final": "Is your brain stuck in a 'fight or flight' loop? 🧠 Most people waste 90% of their brain capacity on useless rumination. Break the cycle!\n\n#mentalhealth #anxietyrelief #neuroscience #breakthehabit #lifetips #shorts",
+    "tiktok_caption": "Is your brain stuck in a 'fight or flight' loop? 🧠 Most people waste 90% of their brain capacity on useless rumination. Break the cycle!\n\n#mentalhealth #anxietyrelief #neuroscience #breakthehabit #lifetips #shorts",
+    "title_indonesia": "Stop the Limbic Loop 🚫",
+    "title_inggris": "Stop the Limbic Loop 🚫",
+    "hastag": "#mentalhealth #neuroscience #overthinking #habitbuilding #drsweta",
+    "start_time": 946.0,
+    "end_time": 994.0,
+    "duration": 48.0,
+    "alasan": "Explains a common, relatable struggle (overthinking) and offers a neurological reason for why it happens.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/fHBR1j1kJ1I",
+    "content_type": "podcast"
   }
 ]
