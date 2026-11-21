@@ -3127,5 +3127,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/jrn7yXOC21Y",
     "content_type": "comedy"
+  },
+  {
+    "rank": 85,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/pranit_more_rank_9_ready.mp4",
+    "thumbnail_path": "queue/pranit_more_thumb_rank_9.jpg",
+    "thumbnail_text": "₹10,000 Haircut Mystery! 💇‍♂️",
+    "youtube_title_final": "₹10,000 Haircut Mystery! 💇‍♂️",
+    "youtube_description_final": "Hair stylist explains why haircuts cost ₹10,000! ✂️\n\n#pranitmore #crowdwork #standupcomedy #hairstylist #luxury #shorts",
+    "youtube_tags_final": [
+      "pranitmore",
+      "crowdwork",
+      "standupcomedy",
+      "hairstylist",
+      "luxury",
+      "shorts"
+    ],
+    "tiktok_caption_final": "Hair stylist explains why haircuts cost ₹10,000! ✂️\n\n#pranitmore #crowdwork #standupcomedy #hairstylist #luxury #shorts",
+    "tiktok_caption": "Hair stylist explains why haircuts cost ₹10,000! ✂️\n\n#pranitmore #crowdwork #standupcomedy #hairstylist #luxury #shorts",
+    "title_indonesia": "₹10,000 Haircut Mystery! 💇‍♂️",
+    "title_inggris": "₹10,000 Haircut Mystery! 💇‍♂️",
+    "hastag": "#pranitmore #crowdwork #standupcomedy #hairstylist #luxury #shorts",
+    "start_time": 3338.0,
+    "end_time": 3385.0,
+    "duration": 47.0,
+    "alasan": "A hair stylist in the audience explains his pricing strategy based on client profiling.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/jrn7yXOC21Y",
+    "content_type": "comedy"
   }
 ]
