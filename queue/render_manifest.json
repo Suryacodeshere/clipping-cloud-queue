@@ -3282,5 +3282,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/LhgEfBXWfak",
     "content_type": "podcast"
+  },
+  {
+    "rank": 90,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/vikas_divyakirti_rank_7_ready.mp4",
+    "thumbnail_path": "queue/vikas_divyakirti_thumb_rank_7.jpg",
+    "thumbnail_text": "The Secret to 'The Zone' 🏟️⚽",
+    "youtube_title_final": "The Secret to 'The Zone' 🏟️⚽",
+    "youtube_description_final": "When the cricket ball looks like a football, you’ve reached the zone. How to get there? Dr. Vikas explains the power of being yourself. 💯\n\n#thezone #peakperformance #mindset #motivation #wisdom",
+    "youtube_tags_final": [
+      "vikasdivyakirti",
+      "rajshamani",
+      "mentalhealth",
+      "focus",
+      "wisdom",
+      "podcast"
+    ],
+    "tiktok_caption_final": "When the cricket ball looks like a football, you’ve reached the zone. How to get there? Dr. Vikas explains the power of being yourself. 💯\n\n#thezone #peakperformance #mindset #motivation #wisdom",
+    "tiktok_caption": "When the cricket ball looks like a football, you’ve reached the zone. How to get there? Dr. Vikas explains the power of being yourself. 💯\n\n#thezone #peakperformance #mindset #motivation #wisdom",
+    "title_indonesia": "The Secret to 'The Zone' 🏟️⚽",
+    "title_inggris": "The Secret to 'The Zone' 🏟️⚽",
+    "hastag": "#vikasdivyakirti #rajshamani #mentalhealth #focus #wisdom #podcast",
+    "start_time": 266.5,
+    "end_time": 302.6,
+    "duration": 36.1,
+    "alasan": "The visual metaphor of the 'ball looking like a football' is a powerful hook for anyone pursuing excellence.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/LhgEfBXWfak",
+    "content_type": "podcast"
   }
 ]
