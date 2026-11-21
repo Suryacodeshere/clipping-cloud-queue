@@ -2538,5 +2538,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/fHBR1j1kJ1I",
     "content_type": "podcast"
+  },
+  {
+    "rank": 66,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/dr_sweta_rank_3_ready.mp4",
+    "thumbnail_path": "queue/dr_sweta_thumb_rank_3.jpg",
+    "thumbnail_text": "Instant Anxiety Relief 4-7-8 Breathing 🧘",
+    "youtube_title_final": "Instant Anxiety Relief 4-7-8 Breathing 🧘",
+    "youtube_description_final": "Feeling anxious? Use this 4-7-8 breathing technique to instantly reset your nervous system!\n\n#anxietyrelief #breathing #mentalhealth #drsweta #rajshamani #shorts",
+    "youtube_tags_final": [
+      "drsweta",
+      "rajshamani",
+      "neuroscience",
+      "brainhack",
+      "podcast",
+      "shorts"
+    ],
+    "tiktok_caption_final": "Feeling anxious? Use this 4-7-8 breathing technique to instantly reset your nervous system!\n\n#anxietyrelief #breathing #mentalhealth #drsweta #rajshamani #shorts",
+    "tiktok_caption": "Feeling anxious? Use this 4-7-8 breathing technique to instantly reset your nervous system!\n\n#anxietyrelief #breathing #mentalhealth #drsweta #rajshamani #shorts",
+    "title_indonesia": "Instant Anxiety Relief 4-7-8 Breathing 🧘",
+    "title_inggris": "Instant Anxiety Relief 4-7-8 Breathing 🧘",
+    "hastag": "#drsweta #rajshamani #neuroscience #brainhack #podcast #shorts",
+    "start_time": 4606.0,
+    "end_time": 4655.0,
+    "duration": 49.0,
+    "alasan": "Delivers an extremely practical, highly requested mental health tool (4-7-8 breathing ratio) for instant anxiety relief.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/fHBR1j1kJ1I",
+    "content_type": "podcast"
   }
 ]
