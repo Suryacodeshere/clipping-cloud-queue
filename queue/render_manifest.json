@@ -2414,5 +2414,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/LhgEfBXWfak",
     "content_type": "podcast"
+  },
+  {
+    "rank": 62,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/vikas_divyakirti_rank_2_ready.mp4",
+    "thumbnail_path": "queue/vikas_divyakirti_thumb_rank_2.jpg",
+    "thumbnail_text": "What Makes a Champion? 🏏👑",
+    "youtube_title_final": "What Makes a Champion? 🏏👑",
+    "youtube_description_final": "It’s not just hard work; it’s high-speed decision-making under pressure. Dr. Vikas Divyakirti explains why legends like Virat Kohli are built differently. Do you have what it takes? 🚀\n\n#cricket #viratkohli #success #mindset #vikasdivyakirti #rajshamani #performance",
+    "youtube_tags_final": [
+      "vikasdivyakirti",
+      "rajshamani",
+      "cricket",
+      "viratkohli",
+      "success",
+      "mindset"
+    ],
+    "tiktok_caption_final": "It’s not just hard work; it’s high-speed decision-making under pressure. Dr. Vikas Divyakirti explains why legends like Virat Kohli are built differently. Do you have what it takes? 🚀\n\n#cricket #viratkohli #success #mindset #vikasdivyakirti #rajshamani #performance",
+    "tiktok_caption": "It’s not just hard work; it’s high-speed decision-making under pressure. Dr. Vikas Divyakirti explains why legends like Virat Kohli are built differently. Do you have what it takes? 🚀\n\n#cricket #viratkohli #success #mindset #vikasdivyakirti #rajshamani #performance",
+    "title_indonesia": "What Makes a Champion? 🏏👑",
+    "title_inggris": "What Makes a Champion? 🏏👑",
+    "hastag": "#vikasdivyakirti #rajshamani #cricket #viratkohli #success #mindset",
+    "start_time": 152.9,
+    "end_time": 189.1,
+    "duration": 36.2,
+    "alasan": "This clip uses the relatable and highly popular context of cricket and Virat Kohli to explain complex psychological concepts like 'processing speed,' making it an instant hit for a general audience.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/LhgEfBXWfak",
+    "content_type": "podcast"
   }
 ]
