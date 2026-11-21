@@ -2507,5 +2507,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/fHBR1j1kJ1I",
     "content_type": "podcast"
+  },
+  {
+    "rank": 65,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/dr_sweta_rank_2_ready.mp4",
+    "thumbnail_path": "queue/dr_sweta_thumb_rank_2.jpg",
+    "thumbnail_text": "Pillow Talk Technique for Morning 🛌",
+    "youtube_title_final": "Pillow Talk Technique for Morning 🛌",
+    "youtube_description_final": "How to wake up without a loud alarm clock using 'Pillow Talk'!\n\n#morningroutine #brainhacking #mindset #drsweta #rajshamani #shorts",
+    "youtube_tags_final": [
+      "drsweta",
+      "rajshamani",
+      "neuroscience",
+      "brainhack",
+      "podcast",
+      "shorts"
+    ],
+    "tiktok_caption_final": "How to wake up without a loud alarm clock using 'Pillow Talk'!\n\n#morningroutine #brainhacking #mindset #drsweta #rajshamani #shorts",
+    "tiktok_caption": "How to wake up without a loud alarm clock using 'Pillow Talk'!\n\n#morningroutine #brainhacking #mindset #drsweta #rajshamani #shorts",
+    "title_indonesia": "Pillow Talk Technique for Morning 🛌",
+    "title_inggris": "Pillow Talk Technique for Morning 🛌",
+    "hastag": "#drsweta #rajshamani #neuroscience #brainhack #podcast #shorts",
+    "start_time": 642.0,
+    "end_time": 685.0,
+    "duration": 43.0,
+    "alasan": "Provides a shocking and counter-intuitive method of waking up without an alarm simply by telling your pillow.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/fHBR1j1kJ1I",
+    "content_type": "podcast"
   }
 ]
