@@ -3313,5 +3313,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/LhgEfBXWfak",
     "content_type": "podcast"
+  },
+  {
+    "rank": 91,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/vikas_divyakirti_rank_8_ready.mp4",
+    "thumbnail_path": "queue/vikas_divyakirti_thumb_rank_8.jpg",
+    "thumbnail_text": "Why Randomness Sparks Genius 💡✨",
+    "youtube_title_final": "Why Randomness Sparks Genius 💡✨",
+    "youtube_description_final": "Did you know that not preparing sometimes leads to the best results? Dr. Vikas on how randomness connects the dots for true creativity. 🧠\n\n#creativity #brainhacks #innovation #wisdom #learning",
+    "youtube_tags_final": [
+      "vikasdivyakirti",
+      "rajshamani",
+      "creativity",
+      "learning",
+      "innovation",
+      "genius"
+    ],
+    "tiktok_caption_final": "Did you know that not preparing sometimes leads to the best results? Dr. Vikas on how randomness connects the dots for true creativity. 🧠\n\n#creativity #brainhacks #innovation #wisdom #learning",
+    "tiktok_caption": "Did you know that not preparing sometimes leads to the best results? Dr. Vikas on how randomness connects the dots for true creativity. 🧠\n\n#creativity #brainhacks #innovation #wisdom #learning",
+    "title_indonesia": "Why Randomness Sparks Genius 💡✨",
+    "title_inggris": "Why Randomness Sparks Genius 💡✨",
+    "hastag": "#vikasdivyakirti #rajshamani #creativity #learning #innovation #genius",
+    "start_time": 343.1,
+    "end_time": 394.1,
+    "duration": 51.0,
+    "alasan": "This challenges the conventional wisdom of 'constant preparation', making it highly shareable for students and professionals.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/LhgEfBXWfak",
+    "content_type": "podcast"
   }
 ]
