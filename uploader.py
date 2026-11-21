@@ -115,59 +115,71 @@ def get_youtube_client():
 
 def upload_youtube_short(youtube, video_path, clip_data):
     from googleapiclient.http import MediaFileUpload
+    import re
 
     raw_title = (
         clip_data.get("youtube_title_final")
         or clip_data.get("title")
-        or clip_data.get("title_inggris", "GTA 6 Gameplay Highlight")
+        or clip_data.get("title_inggris", "Viral Highlight")
     )
+    content_type = str(clip_data.get("content_type", "gameplay")).lower()
 
-    # 1. Title SEO Optimization
-    title = raw_title.strip()
-    if "GTA 6" not in title and "GTA" not in title:
-        title = f"GTA 6 - {title}"
-    if "#Shorts" not in title and "#shorts" not in title:
-        title = f"{title[:88].rstrip()} #Shorts"
+    # 1. Mobile-Optimized Hook Title (< 55 chars)
+    clean_title = raw_title.replace("GTA 6 - ", "").replace("GTA6 - ", "").strip()
+    clean_title = re.sub(r"#shorts", "", clean_title, flags=re.IGNORECASE).strip()
+    if len(clean_title) > 48:
+        clean_title = clean_title[:45].rstrip() + "..."
+    title = f"{clean_title} #shorts"
 
-    # 2. Description SEO Structure
+    # 2. Content-Aware Category, Audio Language & Targeted Tags
     raw_desc = (
         clip_data.get("youtube_description_final", "")
         or clip_data.get("tiktok_caption_final", "")
-        or raw_title
+        or clean_title
     )
     clean_desc_lines = [l for l in raw_desc.splitlines() if not l.strip().startswith("#")]
-    hook_desc = "\n".join(clean_desc_lines).strip()
+    hook_desc = "\n".join(clean_desc_lines[:3]).strip()
+
+    if "comedy" in content_type:
+        category_id = "23"  # Comedy
+        niche_tags = ["Standup Comedy", "Indian Comedy", "Comedy Shorts", "Viral Comedy", "Hindi Standup"]
+        desc_hashtags = "#Shorts #Comedy #StandupComedy"
+        channel_hook = "Subscribe to @bubucreates-p3c for daily viral standup & comedy moments!"
+    elif "podcast" in content_type:
+        category_id = "24"  # Entertainment
+        niche_tags = ["Podcast", "Indian Podcast", "Podcast Highlights", "Motivation", "Hindi Podcast"]
+        desc_hashtags = "#Shorts #Podcast #Inspiration"
+        channel_hook = "Subscribe to @bubucreates-p3c for daily life insights & podcast highlights!"
+    else:
+        category_id = "20"  # Gaming
+        niche_tags = ["Gaming", "Gaming Shorts", "GTA 6", "GTA 6 Gameplay", "Vice City"]
+        desc_hashtags = "#Shorts #Gaming #GTA6"
+        channel_hook = "Subscribe to @bubucreates-p3c for daily GTA 6 gameplay & viral moments!"
+
+    clip_tags = clip_data.get("youtube_tags_final") or clip_data.get("tags") or []
+    final_tags = list(niche_tags)
+    for ct in clip_tags:
+        ct_clean = str(ct).replace("#", "").strip()
+        if ct_clean and ct_clean.lower() not in [t.lower() for t in final_tags]:
+            final_tags.append(ct_clean)
+        if len(final_tags) >= 10:
+            break
 
     seo_description = f"""{hook_desc}
 
-🎮 Game: Grand Theft Auto VI (GTA 6)
-🔥 Streamer Gameplay Highlights & Viral Moments
-🔔 Subscribe to @bubucreates-p3c for daily GTA 6 Shorts, epic fails & gameplay moments!
+🔔 {channel_hook}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-#Shorts #GTA6 #GTAVI #Gaming #TechnoGamerz #CarryMinati #Mythpat #GamingShorts #ShortsFeed #ViceCity""".strip()
-
-    # 3. Rich SEO Tags Stack
-    base_tags = [
-        "GTA 6", "Grand Theft Auto VI", "GTA 6 Gameplay", "GTA 6 Shorts",
-        "GTA 6 Clips", "Gaming", "Gaming Shorts", "Shorts", "Vice City",
-        "Techno Gamerz", "Techno Gamerz GTA 6", "CarryMinati", "Carry GTA 6",
-        "Mythpat", "Mythpat GTA 6", "GTA 6 Supercar", "GTA 6 Police Chase",
-        "Viral Shorts", "Trending Gaming"
-    ]
-    clip_tags = clip_data.get("youtube_tags_final") or clip_data.get("tags") or []
-    for ct in clip_tags:
-        ct_clean = str(ct).replace("#", "").strip()
-        if ct_clean and ct_clean.lower() not in [t.lower() for t in base_tags]:
-            base_tags.append(ct_clean)
+{desc_hashtags}""".strip()
 
     body = {
         "snippet": {
-            "title": title[:100],
+            "title": title,
             "description": seo_description,
-            "tags": base_tags[:25],
-            "categoryId": "20",  # Gaming
-            "defaultLanguage": "en",
+            "tags": final_tags,
+            "categoryId": category_id,
+            "defaultLanguage": "hi",
+            "defaultAudioLanguage": "hi",
         },
         "status": {
             "privacyStatus": "public",
@@ -175,8 +187,8 @@ def upload_youtube_short(youtube, video_path, clip_data):
         },
     }
 
-    print(f"\n[YOUTUBE UPLOAD] Publishing SEO-Optimized Short: {title}")
-    print(f"   Tags ({len(base_tags[:25])} tags): {', '.join(base_tags[:8])}...")
+    print(f"\n[YOUTUBE UPLOAD] Publishing High-Retention Short: {title}")
+    print(f"   Category: {category_id} | AudioLang: hi | Tags ({len(final_tags)}): {', '.join(final_tags[:5])}...")
     media = MediaFileUpload(video_path, chunksize=8 * 1024 * 1024, resumable=True)
     request = youtube.videos().insert(
         part="snippet,status",
@@ -305,10 +317,28 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
     if target_thumb_path:
         print(f"   Thumbnail: {target_thumb_path}")
 
-    # 1. Upload to YouTube Shorts (if configured)
+    # 1. Upload to YouTube Shorts (if configured & pacing allows: 2-3 shorts/day on fresh channel)
     yt_client = get_youtube_client()
     yt_data = None
+    should_upload_yt = True
     if yt_client:
+        yt_interval_hours = 6.0  # Safe 6h pacing prevents bot-spam throttle on new channel
+        if os.path.exists(YT_RESULTS_FILE):
+            try:
+                with open(YT_RESULTS_FILE, "r", encoding="utf-8") as yf:
+                    yt_history = json.load(yf)
+                if yt_history:
+                    last_yt_ts = parse_iso_timestamp(yt_history[-1].get("timestamp", ""))
+                    if last_yt_ts:
+                        now_utc = datetime.now(timezone.utc)
+                        elapsed_yt = (now_utc.timestamp() - last_yt_ts.timestamp()) / 3600.0
+                        if elapsed_yt < yt_interval_hours:
+                            print(f"[YOUTUBE PACING] Last Short posted {elapsed_yt:.1f}h ago. YouTube pacing requires {yt_interval_hours}h for algorithm seeding. Skipping YouTube this cycle.")
+                            should_upload_yt = False
+            except Exception as e:
+                print(f"[WARN] Failed checking YouTube pacing: {e}")
+
+    if yt_client and should_upload_yt:
         try:
             yt_data = upload_youtube_short(yt_client, target_video_path, target_clip)
             # Save to youtube results file
