@@ -3375,5 +3375,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/LhgEfBXWfak",
     "content_type": "podcast"
+  },
+  {
+    "rank": 93,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/vikas_divyakirti_rank_10_ready.mp4",
+    "thumbnail_path": "queue/vikas_divyakirti_thumb_rank_10.jpg",
+    "thumbnail_text": "Elon Musk's Crazy Vision 🚀🧠",
+    "youtube_title_final": "Elon Musk's Crazy Vision 🚀🧠",
+    "youtube_description_final": "Cars without engines? Telepathy via brain chips? Elon Musk isn't just building cars; he's rewriting the future. Are we ready? 🔌\n\n#elonmusk #future #technology #innovation #tesla #brainchip",
+    "youtube_tags_final": [
+      "vikasdivyakirti",
+      "rajshamani",
+      "elonmusk",
+      "tesla",
+      "future",
+      "tech"
+    ],
+    "tiktok_caption_final": "Cars without engines? Telepathy via brain chips? Elon Musk isn't just building cars; he's rewriting the future. Are we ready? 🔌\n\n#elonmusk #future #technology #innovation #tesla #brainchip",
+    "tiktok_caption": "Cars without engines? Telepathy via brain chips? Elon Musk isn't just building cars; he's rewriting the future. Are we ready? 🔌\n\n#elonmusk #future #technology #innovation #tesla #brainchip",
+    "title_indonesia": "Elon Musk's Crazy Vision 🚀🧠",
+    "title_inggris": "Elon Musk's Crazy Vision 🚀🧠",
+    "hastag": "#vikasdivyakirti #rajshamani #elonmusk #tesla #future #tech",
+    "start_time": 575.9,
+    "end_time": 624.1,
+    "duration": 48.2,
+    "alasan": "Linking Elon Musk’s disruptive tech to the idea of a 'visionary boss' provides a high-engagement topic for tech enthusiasts.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/LhgEfBXWfak",
+    "content_type": "podcast"
   }
 ]
