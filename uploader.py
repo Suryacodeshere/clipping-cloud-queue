@@ -6,6 +6,7 @@ uploader.py — 24/7 Cloud Uploader for Instagram Reels & YouTube Shorts (Runs o
 import os
 import sys
 import json
+import re
 import time
 import urllib.parse
 from datetime import datetime, timezone, timedelta
@@ -111,6 +112,149 @@ def get_youtube_client():
     except Exception as e:
         print(f"[WARN] Failed to initialize YouTube client: {e}")
         return None
+
+
+def normalize_title(t):
+    if not t:
+        return ""
+    t = re.sub(r"#shorts", "", t, flags=re.IGNORECASE).strip().lower()
+    t = re.sub(r"^(gta 6 - |gta6 - |gta vi - )", "", t).strip()
+    return re.sub(r"\.\.\.$", "", t).strip()
+
+
+def build_viral_instagram_caption(item):
+    vp = item.get("video_path", "")
+    raw_hook = item.get("title_inggris") or item.get("title") or item.get("youtube_title_final") or "Viral Highlight"
+    hook_title = re.sub(r"#shorts", "", raw_hook, flags=re.IGNORECASE).strip()
+    hook_title = re.sub(r"^(GTA 6 - |GTA6 - |GTA VI - )", "", hook_title).strip()
+    hook_title = re.sub(r"\.\.\.$", "", hook_title).strip()
+
+    raw_desc = (item.get("tiktok_caption_final") or item.get("youtube_description_final") or "").strip()
+    raw_lines = [l.strip() for l in raw_desc.splitlines() if l.strip() and not l.strip().startswith("#") and not l.strip().startswith("Subscribe") and not "---" in l]
+
+    story_parts = []
+    for l in raw_lines:
+        c_line = re.sub(r"#[a-zA-Z_]\w*", "", l).strip()
+        c_line = re.sub(r"(drop a .*|vote below.*|drop below.*|let us know.*|tell us.*|comment below.*|subscribe.*|follow for more.*|who else relates.*|did anyone else.*|w or l.*)", "", c_line, flags=re.IGNORECASE).strip()
+        c_line = re.sub(r"[👇👉👈👆]+", "", c_line).strip()
+        sentences = re.split(r"(?<=[.!?])\s+", c_line)
+        clean_s = []
+        for s in sentences:
+            s_clean = s.strip()
+            if re.search(r"^(would|do|have|what|who|did|can|is|are|could|why)\b", s_clean, re.IGNORECASE) or s_clean.endswith("?"):
+                continue
+            if s_clean:
+                clean_s.append(s_clean)
+        res = " ".join(clean_s)
+        res = re.sub(r"[\?:\,\s!]+$", "", res).strip()
+        if res and len(res) > 10 and res.lower() not in hook_title.lower() and hook_title.lower() not in res.lower():
+            story_parts.append(res)
+
+    if "carry" in vp:
+        dm_cta = "✈️ Send this to your duo who's been waiting for GTA 6 since school 💀"
+        question = "Drop a 🔥 if Carry's reaction was pure gold, or 💀 if you'd react differently 👇"
+        hashtags = ["#CarryMinati", "#CarryIsLive", "#GTA6", "#IndianGaming", "#GTA6Gameplay"]
+        fallback_context = "Carry's first live reaction to GTA 6 had the entire chat in absolute tears. After 12 years of waiting, the emotion is 100% genuine!"
+    elif "techno2" in vp:
+        dm_cta = "✈️ Share this with that friend who explores every Easter egg in GTA 🎮"
+        question = "W or L mission escape? Drop your vote below 👇"
+        hashtags = ["#TechnoGamerz", "#GTA6", "#GTA6Gameplay", "#IndianGaming", "#GamingReels"]
+        fallback_context = "Techno Gamerz pulling off high-risk maneuvers in GTA 6 Vice City. The next-gen police AI is legitimately ruthless!"
+    elif "mythpat" in vp:
+        dm_cta = "✈️ Send this to your gaming partner who panics during every single heist 😭💀"
+        question = "Rate Mythpat's survival skills 1 to 10 in the comments 👇"
+        hashtags = ["#Mythpat", "#GTA6", "#IndianGaming", "#GamingHumor", "#GTA6Gameplay"]
+        fallback_context = "Mythpat entering full panic mode the second the mission starts. How he even made it out alive is a mystery 💀"
+    elif "liveinsaan" in vp:
+        dm_cta = "✈️ Share this with the friend who always starts unnecessary chaos in GTA 💀"
+        question = "Could you survive this gang ambush? Drop a 🔥 if YES or 💀 if BUSTED 👇"
+        hashtags = ["#LiveInsaan", "#TriggeredInsaan", "#GTA6", "#IndianGaming", "#GamingMoments"]
+        fallback_context = "Triggered Insaan's chaotic gameplay went from 0 to 100 in two seconds flat. The entire Vice City police department showed up!"
+    elif "dattrax" in vp:
+        dm_cta = "✈️ Send this to your duo who crashes the getaway vehicle every single time 😭"
+        question = "10/10 escape or pure luck? Tell us in the comments 👇"
+        hashtags = ["#DattraxGaming", "#GTA6", "#GTA6Gameplay", "#IndianGamers", "#ViceCity"]
+        fallback_context = "High-stakes police chase and shootout in GTA 6 Vice City. Every turn is pure adrenaline and split-second survival!"
+    elif "mrbeast" in vp:
+        dm_cta = "✈️ Send this to a friend who would do this challenge for a million dollars 💰"
+        question = "Would your mom be proud or mad? Tell us in the comments 👇"
+        hashtags = ["#MrBeast", "#MrBeastGaming", "#GTA6", "#GamingChallenge", "#GamingReels"]
+        fallback_context = "MrBeast turns GTA 6 into an absurd high-stakes challenge. High risk, hilarious chaos, and an unexpected ending!"
+    elif any(k in vp for k in ["highlight", "stream2", "v2_highlight"]):
+        dm_cta = "✈️ Send this to your duo who always triggers a 3-star wanted level in 2 minutes 💀"
+        question = "W or L move? Drop your thoughts below 👇"
+        hashtags = ["#GTA6", "#GTA6Gameplay", "#IndianGaming", "#GamingMoments", "#ViceCity"]
+        fallback_context = "Just when you think you've seen everything in GTA 6, this happens. The next-gen physics and NPC reactions are wild!"
+    elif "munawar" in vp:
+        dm_cta = "✈️ Share this with that friend who overthinks every single situation 😭💀"
+        question = "Could you hold your laugh here? Rate this bit 1 to 10 👇"
+        hashtags = ["#MunawarFaruqui", "#Dhandho", "#IndianStandup", "#ComedyReels", "#DesiHumor"]
+        fallback_context = "Munawar Faruqui breaking down relatable life struggles in 'Dhandho'. His observational timing on this punchline is unmatched!"
+    elif "samay" in vp:
+        dm_cta = "✈️ Send this to that one friend whose humor is completely unhinged 💀"
+        question = "W or L roast? Drop your reaction in the comments 👇"
+        hashtags = ["#SamayRaina", "#StillAlive", "#IndianStandup", "#RoastComedy", "#DesiHumor"]
+        fallback_context = "Samay Raina turning raw life experiences and unfiltered crowd interactions into pure comedic gold in 'STILL ALIVE'!"
+    elif "pranit" in vp:
+        dm_cta = "✈️ Share this with that friend who would get roasted in the front row 💀"
+        question = "Who took the bigger L here? Tell us below 👇"
+        hashtags = ["#PranitMore", "#CrowdWork", "#IndianComedy", "#StandupComedy", "#DesiHumor"]
+        fallback_context = "When crowd work goes completely off-script! Pranit More's quick-witted reaction to this audience confession is hysterical."
+    elif "satish" in vp:
+        dm_cta = "✈️ Send this to that friend who's surviving on pure middle-class struggle 😂💀"
+        question = "How relatable is this on a scale of 1 to 10? Drop below 👇"
+        hashtags = ["#SatishRay", "#BerozgaarYuva", "#IndianStandup", "#DesiHumor", "#EngineeringLife"]
+        fallback_context = "Satish Ray capturing the hilarious reality of career struggles and everyday desi relatable dilemmas in 'Berozgaar Yuva'!"
+    elif "vikas" in vp:
+        dm_cta = "✈️ Share this with someone who needs this mindset perspective today ✨"
+        question = "Agree or Disagree with Dr. Vikas? Drop a 🧠 for YES or ❌ for NO 👇"
+        hashtags = ["#VikasDivyakirti", "#RajShamani", "#FiguringOut", "#LifeLessons", "#MindsetShift"]
+        fallback_context = "Dr. Vikas Divyakirti breaks down profound psychological truths about human ambition, emotional resilience, and deep thinking."
+    elif "sweta" in vp:
+        dm_cta = "✈️ Send this to a friend who is fighting overthinking and procrastination 💡"
+        question = "Will you try this brain technique today? Drop a 🧠 below 👇"
+        hashtags = ["#BillionaireBrain", "#BrainHacks", "#RajShamani", "#ProductivityHacks", "#MindsetShift"]
+        fallback_context = "Neuroscience-backed cognitive reframing to overcome chronic procrastination, reduce anxiety, and unlock peak mental focus."
+    elif "khan_sir" in vp:
+        dm_cta = "✈️ Share this with someone who follows world affairs and history 🇮🇳"
+        question = "100% facts or debatable? Drop your thoughts below 👇"
+        hashtags = ["#KhanSir", "#Geopolitics", "#WorldWar", "#IndianDefense", "#LifeLessons"]
+        fallback_context = "Khan Sir simplifying complex global geopolitics, defense economies, and historical realities with unfiltered desi clarity."
+    elif "mallya" in vp:
+        dm_cta = "✈️ Send this to a business enthusiast or friend who follows corporate stories 💸"
+        question = "Do you believe his side of the story? Drop your opinion below 👇"
+        hashtags = ["#VijayMallya", "#Kingfisher", "#RajShamani", "#BusinessMindset", "#IndianBusiness"]
+        fallback_context = "Vijay Mallya addresses allegations, the Kingfisher Airlines collapse, and the untold reality behind high-stakes corporate finance."
+    else:
+        dm_cta = "✈️ Share this with your friends who need to see this right now 💀"
+        question = "What are your thoughts on this? Drop a comment below 👇"
+        hashtags = ["#ViralMoments", "#TrendingReels", "#DesiReels", "#IndianContent", "#MustWatch"]
+        fallback_context = "An unbelievable moment captured live that you have to see to believe!"
+
+    if story_parts:
+        story = ". ".join(story_parts[:2]).replace("..", ".")
+        if len(story) < 35:
+            story = f"{story}. {fallback_context}"
+    else:
+        story = fallback_context
+
+    story = re.sub(r"([!?.])\s*[!?.]+", r"\1", story).strip()
+    if not any(story.endswith(c) for c in [".", "!", "?", "💀", "😭", "😂", "🔥", "✨", "🧠", "❤️"]):
+        story += "!"
+
+    caption = f"""{hook_title}
+
+{story}
+
+{dm_cta}
+
+{question}
+
+📌 Save this reel so you don't forget this!
+
+{" ".join(hashtags)}""".strip()
+
+    return caption
 
 
 def upload_youtube_short(youtube, video_path, clip_data):
@@ -239,13 +383,18 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
 
     results = []
     published_titles = set()
+    published_videos = set()
     if os.path.exists(RESULTS_FILE):
         try:
             with open(RESULTS_FILE, "r", encoding="utf-8") as rf:
                 results = json.load(rf)
                 published_titles = {
-                    r.get("title", "").strip().lower()
+                    normalize_title(r.get("title", ""))
                     for r in results if r.get("status") == "published" and r.get("title")
+                }
+                published_videos = {
+                    safe_basename(r.get("video", "")).lower()
+                    for r in results if r.get("status") == "published" and r.get("video")
                 }
         except Exception:
             results = []
@@ -274,12 +423,13 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
 
     for i, clip in enumerate(clips):
         title = clip.get("title") or clip.get("youtube_title_final") or clip.get("title_inggris", "")
-        if title and title.strip().lower() in published_titles:
-            continue
-
         raw_vpath = clip.get("output_file") or clip.get("video_path")
         vname = safe_basename(raw_vpath)
         vpath = os.path.join("queue", vname) if vname else None
+
+        # Check if already published by filename or normalized title
+        if (vname and vname.lower() in published_videos) or (title and normalize_title(title) in published_titles):
+            continue
 
         if not vpath or not os.path.exists(vpath):
             print(f"[WARN] Clip {i + 1} file not found on disk: {vpath}")
@@ -298,7 +448,8 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
     if not target_clip:
         unposted = [
             c for c in clips
-            if (c.get("title") or c.get("youtube_title_final") or c.get("title_inggris", "")).strip().lower() not in published_titles
+            if normalize_title(c.get("title") or c.get("youtube_title_final") or c.get("title_inggris", "")) not in published_titles
+            and safe_basename(c.get("output_file") or c.get("video_path")).lower() not in published_videos
         ]
         if unposted:
             raise FileNotFoundError(f"Found {len(unposted)} pending clips in manifest, but their video files were not found in queue/ directory!")
@@ -306,11 +457,9 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
         return
 
     title = target_clip.get("title") or target_clip.get("youtube_title_final") or target_clip.get("title_inggris", "")
-    caption = target_clip.get("tiktok_caption") or target_clip.get("tiktok_caption_final", "") or title
-    tags = target_clip.get("tags") or target_clip.get("youtube_tags_final", [])
-    if tags and "#" not in caption:
-        tag_str = " ".join(f"#{t.replace(' ', '')}" for t in tags[:5])
-        caption = f"{caption}\n\n{tag_str}"
+    caption = target_clip.get("instagram_caption_final") or target_clip.get("tiktok_caption_final") or target_clip.get("tiktok_caption")
+    if not caption or "✈️" not in caption:
+        caption = build_viral_instagram_caption(target_clip)
 
     print(f"\n[CLOUD UPLOAD] Publishing next Clip: {title}")
     print(f"   Video: {target_video_path}")
