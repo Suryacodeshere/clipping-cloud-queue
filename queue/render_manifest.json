@@ -3556,5 +3556,35 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/fHBR1j1kJ1I",
     "content_type": "podcast"
+  },
+  {
+    "rank": 99,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/dr_sweta_rank_9_ready.mp4",
+    "thumbnail_path": "queue/dr_sweta_thumb_rank_9.jpg",
+    "thumbnail_text": "3 Steps to Supercharge Your Brain 🚀",
+    "youtube_title_final": "3 Steps to Supercharge Your Brain 🚀",
+    "youtube_description_final": "Want to be ultra-productive? 📈 Forget time management, focus on energy management. These 3 steps will change your life. \n\n#productivity #energy #brainpower #success #neuroscience #shorts",
+    "youtube_tags_final": [
+      "productivity",
+      "energy",
+      "brainscience",
+      "success",
+      "shorts"
+    ],
+    "tiktok_caption_final": "Want to be ultra-productive? 📈 Forget time management, focus on energy management. These 3 steps will change your life. \n\n#productivity #energy #brainpower #success #neuroscience #shorts",
+    "tiktok_caption": "Want to be ultra-productive? 📈 Forget time management, focus on energy management. These 3 steps will change your life. \n\n#productivity #energy #brainpower #success #neuroscience #shorts",
+    "title_indonesia": "3 Steps to Supercharge Your Brain 🚀",
+    "title_inggris": "3 Steps to Supercharge Your Brain 🚀",
+    "hastag": "#productivity #energy #brainscience #success #shorts",
+    "start_time": 2742.0,
+    "end_time": 2790.0,
+    "duration": 48.0,
+    "alasan": "Highly actionable list format; viewers love '3-step' summaries for immediate self-improvement.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/fHBR1j1kJ1I",
+    "content_type": "podcast"
   }
 ]
