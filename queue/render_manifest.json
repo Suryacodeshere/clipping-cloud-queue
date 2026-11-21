@@ -2352,5 +2352,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/jrn7yXOC21Y",
     "content_type": "comedy"
+  },
+  {
+    "rank": 60,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/pranit_more_rank_3_ready.mp4",
+    "thumbnail_path": "queue/pranit_more_thumb_rank_3.jpg",
+    "thumbnail_text": "₹10,000 Haircut Mystery! 💇‍♂️",
+    "youtube_title_final": "₹10,000 Haircut Mystery! 💇‍♂️",
+    "youtube_description_final": "Charging 10k for a haircut depending on how rich the client looks! 💀\n\n#pranitmore #crowdwork #standupcomedy #hairstylist #comedy #shorts",
+    "youtube_tags_final": [
+      "pranitmore",
+      "crowdwork",
+      "standupcomedy",
+      "hairstylist",
+      "comedy",
+      "shorts"
+    ],
+    "tiktok_caption_final": "Charging 10k for a haircut depending on how rich the client looks! 💀\n\n#pranitmore #crowdwork #standupcomedy #hairstylist #comedy #shorts",
+    "tiktok_caption": "Charging 10k for a haircut depending on how rich the client looks! 💀\n\n#pranitmore #crowdwork #standupcomedy #hairstylist #comedy #shorts",
+    "title_indonesia": "₹10,000 Haircut Mystery! 💇‍♂️",
+    "title_inggris": "₹10,000 Haircut Mystery! 💇‍♂️",
+    "hastag": "#pranitmore #crowdwork #standupcomedy #hairstylist #comedy #shorts",
+    "start_time": 3410.0,
+    "end_time": 3455.0,
+    "duration": 45.0,
+    "alasan": "Brilliant roast of a celebrity hairstylist who admits to variable pricing based on the client's wealth.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/jrn7yXOC21Y",
+    "content_type": "comedy"
   }
 ]
