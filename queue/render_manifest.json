@@ -1852,5 +1852,37 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/MdeQMVBuGgY",
     "content_type": "podcast"
+  },
+  {
+    "rank": 44,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/vijay_mallya_rank_2_ready.mp4",
+    "thumbnail_path": "queue/vijay_mallya_thumb_rank_2.jpg",
+    "thumbnail_text": "Why Mallya Scouted Young Virat Kohli 🏏",
+    "youtube_title_final": "Why Mallya Scouted Young Virat Kohli 🏏",
+    "youtube_description_final": "Vijay Mallya reveals why he bet on a young Virat Kohli right after the Under-19 World Cup for RCB! 👑🔥\n\nIs Virat Kohli the greatest IPL pick of all time?\n\n#viratkohli #rcb #vijaymallya #ipl #cricket #rajshamani #shorts",
+    "youtube_tags_final": [
+      "viratkohli",
+      "rcb",
+      "vijaymallya",
+      "ipl",
+      "cricket",
+      "rajshamani",
+      "shorts"
+    ],
+    "tiktok_caption_final": "Vijay Mallya reveals why he bet on a young Virat Kohli right after the Under-19 World Cup for RCB! 👑🔥\n\nIs Virat Kohli the greatest IPL pick of all time?\n\n#viratkohli #rcb #vijaymallya #ipl #cricket #rajshamani #shorts",
+    "tiktok_caption": "Vijay Mallya reveals why he bet on a young Virat Kohli right after the Under-19 World Cup for RCB! 👑🔥\n\nIs Virat Kohli the greatest IPL pick of all time?\n\n#viratkohli #rcb #vijaymallya #ipl #cricket #rajshamani #shorts",
+    "title_indonesia": "Why Mallya Scouted Young Virat Kohli 🏏",
+    "title_inggris": "Why Mallya Scouted Young Virat Kohli 🏏",
+    "hastag": "#viratkohli #rcb #vijaymallya #ipl #cricket #rajshamani #shorts",
+    "start_time": 6030.0,
+    "end_time": 6076.7,
+    "duration": 46.72,
+    "alasan": "Massive viral appeal for sports and IPL fans. Captures the iconic story of picking young Virat Kohli straight out of the U-19 World Cup.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/MdeQMVBuGgY",
+    "content_type": "podcast"
   }
 ]
