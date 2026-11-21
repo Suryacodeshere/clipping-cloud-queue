@@ -3586,5 +3586,35 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/fHBR1j1kJ1I",
     "content_type": "podcast"
+  },
+  {
+    "rank": 100,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/dr_sweta_rank_10_ready.mp4",
+    "thumbnail_path": "queue/dr_sweta_thumb_rank_10.jpg",
+    "thumbnail_text": "Why Breakups Feel Different 💔",
+    "youtube_title_final": "Why Breakups Feel Different 💔",
+    "youtube_description_final": "Why do women feel breakups differently than men? 🧠 It’s not just feelings—it’s biology. The science behind the pain. \n\n#breakup #relationships #psychology #menvsomen #neuroscience #drsweta",
+    "youtube_tags_final": [
+      "breakup",
+      "relationships",
+      "psychology",
+      "menvswomen",
+      "neuroscience"
+    ],
+    "tiktok_caption_final": "Why do women feel breakups differently than men? 🧠 It’s not just feelings—it’s biology. The science behind the pain. \n\n#breakup #relationships #psychology #menvsomen #neuroscience #drsweta",
+    "tiktok_caption": "Why do women feel breakups differently than men? 🧠 It’s not just feelings—it’s biology. The science behind the pain. \n\n#breakup #relationships #psychology #menvsomen #neuroscience #drsweta",
+    "title_indonesia": "Why Breakups Feel Different 💔",
+    "title_inggris": "Why Breakups Feel Different 💔",
+    "hastag": "#breakup #relationships #psychology #menvswomen #neuroscience",
+    "start_time": 4026.0,
+    "end_time": 4070.0,
+    "duration": 44.0,
+    "alasan": "Controversial and highly engaging subject matter that drives comments and debates.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/fHBR1j1kJ1I",
+    "content_type": "podcast"
   }
 ]
