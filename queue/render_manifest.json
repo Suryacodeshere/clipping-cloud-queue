@@ -3189,5 +3189,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/jrn7yXOC21Y",
     "content_type": "comedy"
+  },
+  {
+    "rank": 87,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/vikas_divyakirti_rank_4_ready.mp4",
+    "thumbnail_path": "queue/vikas_divyakirti_thumb_rank_4.jpg",
+    "thumbnail_text": "The Only Secret to Success 🤫🔥",
+    "youtube_title_final": "The Only Secret to Success 🤫🔥",
+    "youtube_description_final": "Is discipline just a myth? Dr. Vikas Divyakirti reveals the real trait that guarantees success regardless of your field. Do you agree? 🎯\n\n#successmindset #discipline #vikasdivyakirti #growth #motivation",
+    "youtube_tags_final": [
+      "vikasdivyakirti",
+      "rajshamani",
+      "success",
+      "perseverance",
+      "podcast",
+      "mindset"
+    ],
+    "tiktok_caption_final": "Is discipline just a myth? Dr. Vikas Divyakirti reveals the real trait that guarantees success regardless of your field. Do you agree? 🎯\n\n#successmindset #discipline #vikasdivyakirti #growth #motivation",
+    "tiktok_caption": "Is discipline just a myth? Dr. Vikas Divyakirti reveals the real trait that guarantees success regardless of your field. Do you agree? 🎯\n\n#successmindset #discipline #vikasdivyakirti #growth #motivation",
+    "title_indonesia": "The Only Secret to Success 🤫🔥",
+    "title_inggris": "The Only Secret to Success 🤫🔥",
+    "hastag": "#vikasdivyakirti #rajshamani #success #perseverance #podcast #mindset",
+    "start_time": 3.0,
+    "end_time": 48.4,
+    "duration": 45.4,
+    "alasan": "This captures a counter-intuitive take on discipline vs. perseverance, which is high-value for productivity-focused audiences.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/LhgEfBXWfak",
+    "content_type": "podcast"
   }
 ]
