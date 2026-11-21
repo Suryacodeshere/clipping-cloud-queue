@@ -2291,5 +2291,35 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/wk62YFS3gqc",
     "content_type": "comedy"
+  },
+  {
+    "rank": 58,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/pranit_more_rank_1_ready.mp4",
+    "thumbnail_path": "queue/pranit_more_thumb_rank_1.jpg",
+    "thumbnail_text": "Father-Son Age Mystery! 🤯",
+    "youtube_title_final": "Father-Son Age Mystery! 🤯",
+    "youtube_description_final": "Dad is 44, son is 18... wait, how does math work here? 😂\n\n#pranitmore #crowdwork #standupcomedy #comedy #shorts",
+    "youtube_tags_final": [
+      "pranitmore",
+      "crowdwork",
+      "standupcomedy",
+      "comedy",
+      "shorts"
+    ],
+    "tiktok_caption_final": "Dad is 44, son is 18... wait, how does math work here? 😂\n\n#pranitmore #crowdwork #standupcomedy #comedy #shorts",
+    "tiktok_caption": "Dad is 44, son is 18... wait, how does math work here? 😂\n\n#pranitmore #crowdwork #standupcomedy #comedy #shorts",
+    "title_indonesia": "Father-Son Age Mystery! 🤯",
+    "title_inggris": "Father-Son Age Mystery! 🤯",
+    "hastag": "#pranitmore #crowdwork #standupcomedy #comedy #shorts",
+    "start_time": 100.0,
+    "end_time": 145.0,
+    "duration": 45.0,
+    "alasan": "Hilarious audience interaction trying to figure out the father and son's age gap with quick wit and immediate laughs.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/jrn7yXOC21Y",
+    "content_type": "comedy"
   }
 ]
