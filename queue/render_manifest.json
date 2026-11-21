@@ -2569,5 +2569,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/fHBR1j1kJ1I",
     "content_type": "podcast"
+  },
+  {
+    "rank": 67,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/satish_ray_rank_1_ready.mp4",
+    "thumbnail_path": "queue/satish_ray_thumb_rank_1.jpg",
+    "thumbnail_text": "English Honors ka Translation! 💀😂",
+    "youtube_title_final": "English Honors ka Translation! 💀😂",
+    "youtube_description_final": "जब हिंदी मीडियम वाले इंग्लिश ऑनर्स वाले से ट्रांसलेशन पूछो! 😭 Who else relates to this English translation?\n\n#satishray #comedy #relatable #english #engineering #shorts",
+    "youtube_tags_final": [
+      "satishray",
+      "berozgaar",
+      "fakepodcast",
+      "comedy",
+      "relatable",
+      "shorts"
+    ],
+    "tiktok_caption_final": "जब हिंदी मीडियम वाले इंग्लिश ऑनर्स वाले से ट्रांसलेशन पूछो! 😭 Who else relates to this English translation?\n\n#satishray #comedy #relatable #english #engineering #shorts",
+    "tiktok_caption": "जब हिंदी मीडियम वाले इंग्लिश ऑनर्स वाले से ट्रांसलेशन पूछो! 😭 Who else relates to this English translation?\n\n#satishray #comedy #relatable #english #engineering #shorts",
+    "title_indonesia": "English Honors ka Translation! 💀😂",
+    "title_inggris": "English Honors ka Translation! 💀😂",
+    "hastag": "#satishray #berozgaar #fakepodcast #comedy #relatable #shorts",
+    "start_time": 466.2,
+    "end_time": 515.1,
+    "duration": 48.92,
+    "alasan": "Hilarious interaction where the guest translates 'बाहर बारिश हो रही है' into 'Mader is sick', leading to pure comedy gold.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/0JwJUn_eYOo",
+    "content_type": "comedy"
   }
 ]
