@@ -3406,5 +3406,35 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/LhgEfBXWfak",
     "content_type": "podcast"
+  },
+  {
+    "rank": 94,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/dr_sweta_rank_4_ready.mp4",
+    "thumbnail_path": "queue/dr_sweta_thumb_rank_4.jpg",
+    "thumbnail_text": "Hack Your Morning Brain 🧠",
+    "youtube_title_final": "Hack Your Morning Brain 🧠",
+    "youtube_description_final": "Stop waking up in a panic! 🚨 Here is the neuroscience hack to Prime your brain for success in the first hour. Are you doing this? \n\n#brainhack #successmindset #morningroutine #neuroscience #drsweta #rajshamani",
+    "youtube_tags_final": [
+      "drsweta",
+      "rajshamani",
+      "neuroscience",
+      "brainhack",
+      "morningroutine"
+    ],
+    "tiktok_caption_final": "Stop waking up in a panic! 🚨 Here is the neuroscience hack to Prime your brain for success in the first hour. Are you doing this? \n\n#brainhack #successmindset #morningroutine #neuroscience #drsweta #rajshamani",
+    "tiktok_caption": "Stop waking up in a panic! 🚨 Here is the neuroscience hack to Prime your brain for success in the first hour. Are you doing this? \n\n#brainhack #successmindset #morningroutine #neuroscience #drsweta #rajshamani",
+    "title_indonesia": "Hack Your Morning Brain 🧠",
+    "title_inggris": "Hack Your Morning Brain 🧠",
+    "hastag": "#drsweta #rajshamani #neuroscience #brainhack #morningroutine",
+    "start_time": 175.0,
+    "end_time": 220.0,
+    "duration": 45.0,
+    "alasan": "This provides actionable, high-value advice on morning productivity backed by neuroscience, which appeals to a broad audience.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/fHBR1j1kJ1I",
+    "content_type": "podcast"
   }
 ]
