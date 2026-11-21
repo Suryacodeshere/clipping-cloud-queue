@@ -3526,5 +3526,35 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/fHBR1j1kJ1I",
     "content_type": "podcast"
+  },
+  {
+    "rank": 98,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/dr_sweta_rank_8_ready.mp4",
+    "thumbnail_path": "queue/dr_sweta_thumb_rank_8.jpg",
+    "thumbnail_text": "The Secret to Staying Calm 🧘",
+    "youtube_title_final": "The Secret to Staying Calm 🧘",
+    "youtube_description_final": "The most dangerous people are the ones who stay calm when disrespected. 🛑 How do you build that internal brake? \n\n#stoic #calmness #emotionalintelligence #neuroscience #lifelessons #shorts",
+    "youtube_tags_final": [
+      "emotionalintelligence",
+      "calm",
+      "lifelessons",
+      "drsweta",
+      "rajshamani"
+    ],
+    "tiktok_caption_final": "The most dangerous people are the ones who stay calm when disrespected. 🛑 How do you build that internal brake? \n\n#stoic #calmness #emotionalintelligence #neuroscience #lifelessons #shorts",
+    "tiktok_caption": "The most dangerous people are the ones who stay calm when disrespected. 🛑 How do you build that internal brake? \n\n#stoic #calmness #emotionalintelligence #neuroscience #lifelessons #shorts",
+    "title_indonesia": "The Secret to Staying Calm 🧘",
+    "title_inggris": "The Secret to Staying Calm 🧘",
+    "hastag": "#emotionalintelligence #calm #lifelessons #drsweta #rajshamani",
+    "start_time": 2042.0,
+    "end_time": 2085.0,
+    "duration": 43.0,
+    "alasan": "High emotional resonance; addresses a popular topic about emotional control and resilience.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/fHBR1j1kJ1I",
+    "content_type": "podcast"
   }
 ]
