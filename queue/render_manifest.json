@@ -1724,5 +1724,37 @@
     "video_exists": true,
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/-GW92hZ94ys"
+  },
+  {
+    "rank": 40,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/khan_sir_rank_1_ready.mp4",
+    "thumbnail_path": "queue/khan_sir_thumb_rank_1.jpg",
+    "thumbnail_text": "2 Nahi, DEDH Desh Boliye! 🇵🇰💥",
+    "youtube_title_final": "2 Nahi, DEDH Desh Boliye! 🇵🇰💥",
+    "youtube_description_final": "Khan Sir reveals the fundamental difference in mindset between India and Pakistan after independence! 🇮🇳 vs 🇵🇰\n\nDo you agree with Khan Sir's take on this?\n\n#khansir #rajshamani #geopolitics #indiavspakistan #viral #shorts #reels",
+    "youtube_tags_final": [
+      "khansir",
+      "rajshamani",
+      "geopolitics",
+      "indiavspakistan",
+      "podcast",
+      "viral",
+      "shorts"
+    ],
+    "tiktok_caption_final": "Khan Sir reveals the fundamental difference in mindset between India and Pakistan after independence! 🇮🇳 vs 🇵🇰\n\nDo you agree with Khan Sir's take on this?\n\n#khansir #rajshamani #geopolitics #indiavspakistan #viral #shorts #reels",
+    "tiktok_caption": "Khan Sir reveals the fundamental difference in mindset between India and Pakistan after independence! 🇮🇳 vs 🇵🇰\n\nDo you agree with Khan Sir's take on this?\n\n#khansir #rajshamani #geopolitics #indiavspakistan #viral #shorts #reels",
+    "title_indonesia": "2 Nahi, DEDH Desh Boliye! 🇵🇰💥",
+    "title_inggris": "2 Nahi, DEDH Desh Boliye! 🇵🇰💥",
+    "hastag": "#khansir #rajshamani #geopolitics #indiavspakistan #podcast #viral #shorts",
+    "start_time": 3270.0,
+    "end_time": 3315.0,
+    "duration": 45.0,
+    "alasan": "Starts with a highly sharp and provocative statement ('2 nahi, dedh bolie') comparing India and Pakistan's growth, instantly capturing full viewer attention.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/E3oG313_kps",
+    "content_type": "podcast"
   }
 ]
