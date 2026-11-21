@@ -2445,5 +2445,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/LhgEfBXWfak",
     "content_type": "podcast"
+  },
+  {
+    "rank": 63,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/vikas_divyakirti_rank_3_ready.mp4",
+    "thumbnail_path": "queue/vikas_divyakirti_thumb_rank_3.jpg",
+    "thumbnail_text": "The Secret to Peak Creativity ✨💡",
+    "youtube_title_final": "The Secret to Peak Creativity ✨💡",
+    "youtube_description_final": "Did you know that sometimes 'not preparing' leads to your best performance? Dr. Vikas Divyakirti shares his secret to spontaneous brilliance. What do you think? 🤔\n\n#creativity #performance #mindset #drvikasdivyakirti #rajshamani #growth #wisdom",
+    "youtube_tags_final": [
+      "vikasdivyakirti",
+      "rajshamani",
+      "creativity",
+      "wisdom",
+      "podcast",
+      "learning"
+    ],
+    "tiktok_caption_final": "Did you know that sometimes 'not preparing' leads to your best performance? Dr. Vikas Divyakirti shares his secret to spontaneous brilliance. What do you think? 🤔\n\n#creativity #performance #mindset #drvikasdivyakirti #rajshamani #growth #wisdom",
+    "tiktok_caption": "Did you know that sometimes 'not preparing' leads to your best performance? Dr. Vikas Divyakirti shares his secret to spontaneous brilliance. What do you think? 🤔\n\n#creativity #performance #mindset #drvikasdivyakirti #rajshamani #growth #wisdom",
+    "title_indonesia": "The Secret to Peak Creativity ✨💡",
+    "title_inggris": "The Secret to Peak Creativity ✨💡",
+    "hastag": "#vikasdivyakirti #rajshamani #creativity #wisdom #podcast #learning",
+    "start_time": 343.1,
+    "end_time": 394.1,
+    "duration": 51.0,
+    "alasan": "This offers a counter-intuitive piece of advice about spontaneity and 'randomness' as a source of creative brilliance, which creates high curiosity and value for students and professionals alike.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/LhgEfBXWfak",
+    "content_type": "podcast"
   }
 ]
