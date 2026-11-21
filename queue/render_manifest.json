@@ -1916,5 +1916,37 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/MdeQMVBuGgY",
     "content_type": "podcast"
+  },
+  {
+    "rank": 46,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/dattrax_1_rank_1_ready.mp4",
+    "thumbnail_path": "queue/dattrax_1_thumb_rank_1.jpg",
+    "thumbnail_text": "GTA 6 First Robbery Gameplay! 😱",
+    "youtube_title_final": "GTA 6 First Robbery Gameplay! 😱",
+    "youtube_description_final": "Dattrax Gaming experiences the intense first bank robbery mission in GTA VI! Look at that insane police escape! 🔥\n\nWhat do you think of GTA VI gameplay? Tell us below! 👇\n\n#gta6 #gta6gameplay #dattraxgaming #vicecity #shorts #viral #gaming",
+    "youtube_tags_final": [
+      "gta6",
+      "dattraxgaming",
+      "gaming",
+      "viral",
+      "vicecity",
+      "shorts",
+      "gta6gameplay"
+    ],
+    "tiktok_caption_final": "Dattrax Gaming experiences the intense first bank robbery mission in GTA VI! Look at that insane police escape! 🔥\n\nWhat do you think of GTA VI gameplay? Tell us below! 👇\n\n#gta6 #gta6gameplay #dattraxgaming #vicecity #shorts #viral #gaming",
+    "tiktok_caption": "Dattrax Gaming experiences the intense first bank robbery mission in GTA VI! Look at that insane police escape! 🔥\n\nWhat do you think of GTA VI gameplay? Tell us below! 👇\n\n#gta6 #gta6gameplay #dattraxgaming #vicecity #shorts #viral #gaming",
+    "title_indonesia": "GTA 6 First Robbery Gameplay! 😱",
+    "title_inggris": "GTA 6 First Robbery Gameplay! 😱",
+    "hastag": "#gta6 #dattraxgaming #gaming #viral #vicecity #shorts #gta6gameplay",
+    "start_time": 638.0,
+    "end_time": 685.0,
+    "duration": 47.0,
+    "alasan": "High-stakes bank robbery action right from the start, energetic Hindi commentary, fast-paced gunplay, and a frantic police chase scene that grips viewer attention instantly.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/NxM5kt0LiJg",
+    "content_type": "gameplay"
   }
 ]
