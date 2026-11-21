@@ -2476,5 +2476,36 @@
     "thumbnail_exists": true,
     "source_url": "https://youtu.be/LhgEfBXWfak",
     "content_type": "podcast"
+  },
+  {
+    "rank": 64,
+    "status": "success",
+    "ratio": "9:16",
+    "video_path": "queue/dr_sweta_rank_1_ready.mp4",
+    "thumbnail_path": "queue/dr_sweta_thumb_rank_1.jpg",
+    "thumbnail_text": "Why 95% People Fail (Brain Hack) 🧠",
+    "youtube_title_final": "Why 95% People Fail (Brain Hack) 🧠",
+    "youtube_description_final": "Are you stuck in procrastination? Here is how to trick your brain in the first 5 minutes!\n\n#procrastination #brainhack #productivity #drsweta #rajshamani #shorts",
+    "youtube_tags_final": [
+      "drsweta",
+      "rajshamani",
+      "neuroscience",
+      "brainhack",
+      "podcast",
+      "shorts"
+    ],
+    "tiktok_caption_final": "Are you stuck in procrastination? Here is how to trick your brain in the first 5 minutes!\n\n#procrastination #brainhack #productivity #drsweta #rajshamani #shorts",
+    "tiktok_caption": "Are you stuck in procrastination? Here is how to trick your brain in the first 5 minutes!\n\n#procrastination #brainhack #productivity #drsweta #rajshamani #shorts",
+    "title_indonesia": "Why 95% People Fail (Brain Hack) 🧠",
+    "title_inggris": "Why 95% People Fail (Brain Hack) 🧠",
+    "hastag": "#drsweta #rajshamani #neuroscience #brainhack #podcast #shorts",
+    "start_time": 3571.0,
+    "end_time": 3615.0,
+    "duration": 44.0,
+    "alasan": "Explains why 95% of people procrastinate because the brain is fundamentally lazy, offering an immediate actionable hack.",
+    "video_exists": true,
+    "thumbnail_exists": true,
+    "source_url": "https://youtu.be/fHBR1j1kJ1I",
+    "content_type": "podcast"
   }
 ]
