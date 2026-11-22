@@ -35,6 +35,23 @@ def get_instagram_client():
     cl = Client()
     cl.delay_range = [2, 5]
 
+    # 0. Try loading IG_SETTINGS from environment secret
+    ig_settings_env = os.getenv("IG_SETTINGS", "").strip()
+    if ig_settings_env:
+        try:
+            settings = json.loads(ig_settings_env)
+            cl.set_settings(settings)
+            print("[INFO] Successfully loaded persistent device settings from IG_SETTINGS secret.")
+            cl.get_timeline_feed()
+            raw_user = getattr(cl, "username", None)
+            actual_username = (raw_user if raw_user else username).strip()
+            print(f"[OK] Reused authenticated session for @{actual_username}")
+            if actual_username.lower() != "chicanayaa":
+                raise ValueError(f"Account check failed: got @{actual_username}, expected @chicanayaa")
+            return cl
+        except Exception as e:
+            print(f"[WARN] IG_SETTINGS session check failed ({e}), falling back...")
+
     # 1. Try loading cached session file
     if os.path.exists(SESSION_FILE):
         try:
