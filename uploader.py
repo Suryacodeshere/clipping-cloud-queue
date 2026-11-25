@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 """
 uploader.py — 24/7 Cloud Uploader for Instagram Reels & YouTube Shorts (Runs on GitHub Actions)
+
+Architecture:
+- YouTube Shorts and Instagram Reels run with completely decoupled queues & pacing.
+- YouTube checks both local history (`youtube_upload_results.json`) AND live channel uploads
+  to prevent duplicate uploads under all circumstances.
+- Instagram failures (expired session / checkpoint) are persisted with an auth-secret fingerprint
+  and 6-hour failure backoff so they never crash YouTube progress or trigger login rate limits.
+- Media files in `queue/` are removed once both active platforms have published the clip.
 """
 
-import os
-import sys
+import hashlib
 import json
+import os
 import re
+import sys
 import time
 import urllib.parse
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
@@ -23,6 +32,97 @@ SESSION_FILE = "queue/ig_session.json"
 DEFAULT_MANIFEST = "queue/render_manifest.json"
 RESULTS_FILE = "queue/instagram_upload_results.json"
 YT_RESULTS_FILE = "queue/youtube_upload_results.json"
+IG_AUTH_COOLDOWN_HOURS = 6.0
+
+
+def safe_basename(path_str):
+    if not path_str:
+        return None
+    return path_str.replace("\\", "/").rstrip("/").split("/")[-1]
+
+
+def parse_iso_timestamp(ts_str):
+    try:
+        dt = datetime.fromisoformat(ts_str)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone(timedelta(hours=5, minutes=30)))
+        return dt
+    except Exception:
+        return None
+
+
+def normalize_title(t):
+    if not t:
+        return ""
+    t = re.sub(r"#shorts\b", "", str(t), flags=re.IGNORECASE).strip().lower()
+    t = re.sub(r"^(gta 6 - |gta6 - |gta vi - )", "", t).strip()
+    return re.sub(r"\.\.\.$", "", t).strip()
+
+
+def clip_title_candidates(clip):
+    raw = [
+        clip.get("title"),
+        clip.get("youtube_title_final"),
+        clip.get("title_inggris"),
+    ]
+    return {normalize_title(t) for t in raw if t and normalize_title(t)}
+
+
+def is_clip_published(clip, published_videos, published_titles):
+    raw_vpath = clip.get("output_file") or clip.get("video_path")
+    vname = safe_basename(raw_vpath)
+    if vname and vname.lower() in published_videos:
+        return True
+    if clip_title_candidates(clip) & published_titles:
+        return True
+    return False
+
+
+def find_next_clip(clips, published_videos, published_titles):
+    for i, clip in enumerate(clips):
+        if is_clip_published(clip, published_videos, published_titles):
+            continue
+
+        raw_vpath = clip.get("output_file") or clip.get("video_path")
+        vname = safe_basename(raw_vpath)
+        vpath = os.path.join("queue", vname) if vname else None
+
+        if not vpath or not os.path.exists(vpath):
+            continue
+
+        raw_tpath = clip.get("thumbnail_path")
+        tname = safe_basename(raw_tpath)
+        tpath = os.path.join("queue", tname) if tname and os.path.exists(os.path.join("queue", tname)) else None
+        return i, clip, vpath, tpath
+    return None
+
+
+def compute_ig_auth_fingerprint():
+    username = os.getenv("IG_USERNAME", "").strip()
+    password = os.getenv("IG_PASSWORD", "").strip()
+    sessionid = os.getenv("IG_SESSIONID", "").strip()
+    settings = os.getenv("IG_SETTINGS", "").strip()
+    payload = f"{username}|{password}|{sessionid}|{settings}".encode("utf-8", errors="ignore")
+    return hashlib.sha256(payload).hexdigest()[:12]
+
+
+def is_auth_related_error(err_text):
+    markers = (
+        "login_required",
+        "401",
+        "429",
+        "pleasewaitfewminutes",
+        "challengerequired",
+        "clientneedsupgradeerror",
+        "twofactorrequired",
+        "badpassword",
+        "incorrect password",
+        "account check failed",
+        "out of date",
+        "unauthorized",
+    )
+    low = (err_text or "").lower()
+    return any(m in low for m in markers)
 
 
 def get_instagram_client():
@@ -32,69 +132,77 @@ def get_instagram_client():
     password = os.getenv("IG_PASSWORD", "").strip()
     sessionid = os.getenv("IG_SESSIONID", "").strip()
 
-    cl = Client()
-    cl.delay_range = [2, 5]
-
-    # 0. Try loading IG_SETTINGS from environment secret
+    # 0. Try loading IG_SETTINGS from environment secret on a clean client
     ig_settings_env = os.getenv("IG_SETTINGS", "").strip()
     if ig_settings_env:
+        cl0 = Client()
+        cl0.delay_range = [2, 5]
         try:
             settings = json.loads(ig_settings_env)
-            cl.set_settings(settings)
-            print("[INFO] Successfully loaded persistent device settings from IG_SETTINGS secret.")
-            cl.get_timeline_feed()
-            raw_user = getattr(cl, "username", None)
+            cl0.set_settings(settings)
+            print("[INFO] Loaded persistent device settings from IG_SETTINGS secret.")
+            cl0.get_timeline_feed()
+            raw_user = getattr(cl0, "username", None)
             actual_username = (raw_user if raw_user else username).strip()
             print(f"[OK] Reused authenticated session for @{actual_username}")
             if actual_username.lower() != "chicanayaa":
                 raise ValueError(f"Account check failed: got @{actual_username}, expected @chicanayaa")
-            return cl
+            return cl0
         except Exception as e:
-            print(f"[WARN] IG_SETTINGS session check failed ({e}), falling back...")
+            if "Account check failed" in str(e):
+                raise
+            print(f"[WARN] IG_SETTINGS session check failed ({e}), trying fallback...")
 
-    # 1. Try loading cached session file
+    # 1. Try loading cached session file on a fresh client
     if os.path.exists(SESSION_FILE):
+        cl1 = Client()
+        cl1.delay_range = [2, 5]
         try:
-            cl.load_settings(SESSION_FILE)
-            cl.get_timeline_feed()
-            raw_user = getattr(cl, "username", None)
+            cl1.load_settings(SESSION_FILE)
+            cl1.get_timeline_feed()
+            raw_user = getattr(cl1, "username", None)
             actual_username = (raw_user if raw_user else username).strip()
             print(f"[OK] Reused cached session for @{actual_username}")
             if actual_username.lower() != "chicanayaa":
                 raise ValueError(f"Account check failed: got @{actual_username}, expected @chicanayaa")
-            return cl
+            return cl1
         except Exception as e:
+            if "Account check failed" in str(e):
+                raise
             print(f"[WARN] Cached session invalid ({e}), falling back to session ID...")
 
-    # 2. Try sessionid
+    # 2. Try sessionid on a clean client (preserving device IDs only if available, without expired auth headers)
     if sessionid:
         sessionid = urllib.parse.unquote(sessionid)
+        cl2 = Client()
+        cl2.delay_range = [2, 5]
         try:
             print("[INFO] Logging in with IG_SESSIONID...")
-            cl.login_by_sessionid(sessionid)
-            cl.dump_settings(SESSION_FILE)
-            actual_username = getattr(cl, "username", "").strip()
+            cl2.login_by_sessionid(sessionid)
+            cl2.dump_settings(SESSION_FILE)
+            actual_username = getattr(cl2, "username", "").strip()
             print(f"[OK] Logged in via sessionid as @{actual_username}")
             if actual_username.lower() != "chicanayaa":
                 raise ValueError(f"Account check failed: got @{actual_username}, expected @chicanayaa")
-            return cl
+            return cl2
         except Exception as e:
             if "Account check failed" in str(e):
                 raise
             print(f"[WARN] Session ID login failed ({e}), trying password...")
 
-    # 3. Password fallback
+    # 3. Password fallback on a completely fresh client
     if not username or not password:
-        raise ValueError("Missing credentials: need IG_SESSIONID or IG_USERNAME + IG_PASSWORD.")
+        raise ValueError("Missing credentials: need valid IG_SESSIONID / IG_SETTINGS or IG_USERNAME + IG_PASSWORD.")
 
+    cl3 = Client()
+    cl3.delay_range = [2, 5]
     print(f"[INFO] Logging in with password as @{username}...")
-    cl.login(username, password)
-    cl.dump_settings(SESSION_FILE)
-    actual_username = getattr(cl, "username", "").strip()
+    cl3.login(username, password)
+    cl3.dump_settings(SESSION_FILE)
+    actual_username = getattr(cl3, "username", "").strip()
     if actual_username.lower() != "chicanayaa":
         raise ValueError(f"Account check failed: got @{actual_username}, expected @chicanayaa")
-
-    return cl
+    return cl3
 
 
 def get_youtube_client():
@@ -131,28 +239,58 @@ def get_youtube_client():
         return None
 
 
-def normalize_title(t):
-    if not t:
-        return ""
-    t = re.sub(r"#shorts", "", t, flags=re.IGNORECASE).strip().lower()
-    t = re.sub(r"^(gta 6 - |gta6 - |gta vi - )", "", t).strip()
-    return re.sub(r"\.\.\.$", "", t).strip()
+def fetch_existing_youtube_titles(youtube):
+    """Fetch normalized titles currently live on the channel to prevent duplicate uploads."""
+    live_titles = set()
+    try:
+        ch = youtube.channels().list(part="contentDetails", mine=True).execute()
+        items = ch.get("items", [])
+        if not items:
+            return live_titles
+        uploads_pl = items[0]["contentDetails"]["relatedPlaylists"]["uploads"]
+        req = youtube.playlistItems().list(part="snippet", playlistId=uploads_pl, maxResults=50)
+        fetched = 0
+        while req and fetched < 200:
+            res = req.execute()
+            batch = res.get("items", [])
+            for it in batch:
+                title = (it.get("snippet") or {}).get("title", "")
+                norm = normalize_title(title)
+                if norm:
+                    live_titles.add(norm)
+            fetched += len(batch)
+            req = youtube.playlistItems().list_next(req, res)
+        print(f"[INFO] Verified {len(live_titles)} existing videos on live YouTube channel.")
+    except Exception as e:
+        print(f"[WARN] Could not query live YouTube channel playlist (non-fatal): {e}")
+    return live_titles
 
 
 def build_viral_instagram_caption(item):
     vp = item.get("video_path", "")
     raw_hook = item.get("title_inggris") or item.get("title") or item.get("youtube_title_final") or "Viral Highlight"
-    hook_title = re.sub(r"#shorts", "", raw_hook, flags=re.IGNORECASE).strip()
+    hook_title = re.sub(r"#shorts\b", "", raw_hook, flags=re.IGNORECASE).strip()
     hook_title = re.sub(r"^(GTA 6 - |GTA6 - |GTA VI - )", "", hook_title).strip()
     hook_title = re.sub(r"\.\.\.$", "", hook_title).strip()
 
     raw_desc = (item.get("tiktok_caption_final") or item.get("youtube_description_final") or "").strip()
-    raw_lines = [l.strip() for l in raw_desc.splitlines() if l.strip() and not l.strip().startswith("#") and not l.strip().startswith("Subscribe") and not "---" in l]
+    raw_lines = [
+        l.strip()
+        for l in raw_desc.splitlines()
+        if l.strip() and not l.strip().startswith("#") and not l.strip().startswith("Subscribe") and "---" not in l
+    ]
 
     story_parts = []
-    for l in raw_lines:
+    for idx, l in enumerate(raw_lines):
+        if idx == 0 and (l.strip().lower() in hook_title.lower() or hook_title.lower() in l.strip().lower()):
+            continue
         c_line = re.sub(r"#[a-zA-Z_]\w*", "", l).strip()
-        c_line = re.sub(r"(drop a .*|vote below.*|drop below.*|let us know.*|tell us.*|comment below.*|subscribe.*|follow for more.*|who else relates.*|did anyone else.*|w or l.*)", "", c_line, flags=re.IGNORECASE).strip()
+        c_line = re.sub(
+            r"(tag that friend.*|drop a .*|vote below.*|drop below.*|let us know.*|tell us.*|comment below.*|subscribe.*|follow for more.*|who else relates.*|did anyone else.*|w or l.*)",
+            "",
+            c_line,
+            flags=re.IGNORECASE,
+        ).strip()
         c_line = re.sub(r"[👇👉👈👆]+", "", c_line).strip()
         sentences = re.split(r"(?<=[.!?])\s+", c_line)
         clean_s = []
@@ -276,7 +414,6 @@ def build_viral_instagram_caption(item):
 
 def upload_youtube_short(youtube, video_path, clip_data):
     from googleapiclient.http import MediaFileUpload
-    import re
 
     raw_title = (
         clip_data.get("youtube_title_final")
@@ -285,34 +422,41 @@ def upload_youtube_short(youtube, video_path, clip_data):
     )
     content_type = str(clip_data.get("content_type", "gameplay")).lower()
 
-    # 1. Mobile-Optimized Hook Title (< 55 chars)
     clean_title = raw_title.replace("GTA 6 - ", "").replace("GTA6 - ", "").strip()
-    clean_title = re.sub(r"#shorts", "", clean_title, flags=re.IGNORECASE).strip()
+    clean_title = re.sub(r"#shorts\b", "", clean_title, flags=re.IGNORECASE).strip()
     if len(clean_title) > 48:
         clean_title = clean_title[:45].rstrip() + "..."
     title = f"{clean_title} #shorts"
 
-    # 2. Content-Aware Category, Audio Language & Targeted Tags
     raw_desc = (
         clip_data.get("youtube_description_final", "")
         or clip_data.get("tiktok_caption_final", "")
         or clean_title
     )
-    clean_desc_lines = [l for l in raw_desc.splitlines() if not l.strip().startswith("#")]
-    hook_desc = "\n".join(clean_desc_lines[:3]).strip()
+    clean_desc_lines = [
+        l
+        for l in raw_desc.splitlines()
+        if l.strip()
+        and not l.strip().startswith("#")
+        and "✈️" not in l
+        and "📌" not in l
+        and "━━" not in l
+        and "Subscribe" not in l
+    ]
+    hook_desc = "\n".join(clean_desc_lines[:3]).strip() or clean_title
 
     if "comedy" in content_type:
-        category_id = "23"  # Comedy
+        category_id = str(clip_data.get("category_id") or "23")
         niche_tags = ["Standup Comedy", "Indian Comedy", "Comedy Shorts", "Viral Comedy", "Hindi Standup"]
         desc_hashtags = "#Shorts #Comedy #StandupComedy"
         channel_hook = "Subscribe to @bubucreates-p3c for daily viral standup & comedy moments!"
     elif "podcast" in content_type:
-        category_id = "24"  # Entertainment
+        category_id = str(clip_data.get("category_id") or "24")
         niche_tags = ["Podcast", "Indian Podcast", "Podcast Highlights", "Motivation", "Hindi Podcast"]
         desc_hashtags = "#Shorts #Podcast #Inspiration"
         channel_hook = "Subscribe to @bubucreates-p3c for daily life insights & podcast highlights!"
     else:
-        category_id = "20"  # Gaming
+        category_id = str(clip_data.get("category_id") or "20")
         niche_tags = ["Gaming", "Gaming Shorts", "GTA 6", "GTA 6 Gameplay", "Vice City"]
         desc_hashtags = "#Shorts #Gaming #GTA6"
         channel_hook = "Subscribe to @bubucreates-p3c for daily GTA 6 gameplay & viral moments!"
@@ -333,14 +477,17 @@ def upload_youtube_short(youtube, video_path, clip_data):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 {desc_hashtags}""".strip()
 
+    default_lang = clip_data.get("default_language", "hi")
+    default_audio_lang = clip_data.get("default_audio_language", "hi")
+
     body = {
         "snippet": {
             "title": title,
             "description": seo_description,
             "tags": final_tags,
             "categoryId": category_id,
-            "defaultLanguage": "hi",
-            "defaultAudioLanguage": "hi",
+            "defaultLanguage": default_lang,
+            "defaultAudioLanguage": default_audio_lang,
         },
         "status": {
             "privacyStatus": "public",
@@ -349,7 +496,7 @@ def upload_youtube_short(youtube, video_path, clip_data):
     }
 
     print(f"\n[YOUTUBE UPLOAD] Publishing High-Retention Short: {title}")
-    print(f"   Category: {category_id} | AudioLang: hi | Tags ({len(final_tags)}): {', '.join(final_tags[:5])}...")
+    print(f"   Category: {category_id} | AudioLang: {default_audio_lang} | Tags ({len(final_tags)}): {', '.join(final_tags[:5])}...")
     media = MediaFileUpload(video_path, chunksize=8 * 1024 * 1024, resumable=True)
     request = youtube.videos().insert(
         part="snippet,status",
@@ -370,232 +517,254 @@ def upload_youtube_short(youtube, video_path, clip_data):
     return {"video_id": video_id, "url": yt_url, "title": title}
 
 
-def safe_basename(path_str):
-    if not path_str:
-        return None
-    return path_str.replace("\\", "/").rstrip("/").split("/")[-1]
-
-
-def parse_iso_timestamp(ts_str):
+def load_json_list(path):
+    if not os.path.exists(path):
+        return []
     try:
-        dt = datetime.fromisoformat(ts_str)
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone(timedelta(hours=5, minutes=30)))
-        return dt
-    except Exception:
-        return None
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except Exception as e:
+        print(f"[WARN] Failed reading {path}: {e}")
+        return []
+
+
+def save_json_list(path, data):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def cleanup_completed_files(clips, ig_published_videos, ig_published_titles, yt_published_videos, yt_published_titles, has_yt):
+    for clip in clips:
+        raw_vpath = clip.get("output_file") or clip.get("video_path")
+        vname = safe_basename(raw_vpath)
+        if not vname:
+            continue
+        vpath = os.path.join("queue", vname)
+        if not os.path.exists(vpath):
+            continue
+
+        ig_done = is_clip_published(clip, ig_published_videos, ig_published_titles)
+        yt_done = (not has_yt) or is_clip_published(clip, yt_published_videos, yt_published_titles)
+
+        if ig_done and yt_done:
+            os.remove(vpath)
+            print(f"   Deleted fully published video from queue: {vpath}")
+            tname = safe_basename(clip.get("thumbnail_path"))
+            tpath = os.path.join("queue", tname) if tname else None
+            if tpath and os.path.exists(tpath):
+                os.remove(tpath)
+                print(f"   Deleted thumbnail: {tpath}")
 
 
 def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interval_hours=2.5, force=False):
     if not os.path.exists(manifest_path):
         print(f"[ERR] Manifest not found: {manifest_path}")
-        return
+        return 1
 
-    with open(manifest_path, "r", encoding="utf-8") as f:
-        clips = json.load(f)
-
+    clips = load_json_list(manifest_path)
     if not clips:
         print("[INFO] Manifest is empty.")
-        return
+        return 0
 
-    results = []
-    published_titles = set()
-    published_videos = set()
-    if os.path.exists(RESULTS_FILE):
-        try:
-            with open(RESULTS_FILE, "r", encoding="utf-8") as rf:
-                results = json.load(rf)
-                published_titles = {
-                    normalize_title(r.get("title", ""))
-                    for r in results if r.get("status") == "published" and r.get("title")
-                }
-                published_videos = {
-                    safe_basename(r.get("video", "")).lower()
-                    for r in results if r.get("status") == "published" and r.get("video")
-                }
-        except Exception:
-            results = []
+    now_utc = datetime.now(timezone.utc)
+    auth_fp = compute_ig_auth_fingerprint()
 
-    # Check minimum interval between uploads
-    if not force and results:
-        published_records = [r for r in results if r.get("status") == "published" and r.get("timestamp")]
-        if published_records:
-            last_pub = published_records[-1]
-            last_ts = parse_iso_timestamp(last_pub.get("timestamp", ""))
-            if last_ts:
-                now_utc = datetime.now(timezone.utc)
-                elapsed_hours = (now_utc.timestamp() - last_ts.timestamp()) / 3600.0
-                if elapsed_hours < min_interval_hours:
-                    remaining_hours = min_interval_hours - elapsed_hours
-                    print(f"[PACING HOLD] Last Reel ('{last_pub.get('title')}') was uploaded {elapsed_hours:.2f}h ago.")
-                    print(f"   Policy requires at least {min_interval_hours:.1f}h spacing between uploads.")
-                    print(f"   Next upload eligible in ~{remaining_hours:.1f} hour(s). Exiting cleanly until next cron window.")
-                    return
+    # Load independent platform histories
+    ig_results = load_json_list(RESULTS_FILE)
+    ig_published_videos = {
+        safe_basename(r.get("video", "")).lower()
+        for r in ig_results if r.get("status") == "published" and r.get("video")
+    }
+    ig_published_titles = {
+        normalize_title(r.get("title", ""))
+        for r in ig_results if r.get("status") == "published" and r.get("title")
+    }
 
-    # Find the next unposted clip
-    target_clip = None
-    target_index = -1
-    target_video_path = None
-    target_thumb_path = None
+    yt_results = load_json_list(YT_RESULTS_FILE)
+    yt_published_videos = {
+        safe_basename(r.get("video", "")).lower()
+        for r in yt_results if r.get("video")
+    }
+    yt_published_titles = {
+        normalize_title(r.get("title", ""))
+        for r in yt_results if r.get("title")
+    }
 
-    for i, clip in enumerate(clips):
-        title = clip.get("title") or clip.get("youtube_title_final") or clip.get("title_inggris", "")
-        raw_vpath = clip.get("output_file") or clip.get("video_path")
-        vname = safe_basename(raw_vpath)
-        vpath = os.path.join("queue", vname) if vname else None
-
-        # Check if already published by filename or normalized title
-        if (vname and vname.lower() in published_videos) or (title and normalize_title(title) in published_titles):
-            continue
-
-        if not vpath or not os.path.exists(vpath):
-            print(f"[WARN] Clip {i + 1} file not found on disk: {vpath}")
-            continue
-
-        raw_tpath = clip.get("thumbnail_path")
-        tname = safe_basename(raw_tpath)
-        tpath = os.path.join("queue", tname) if tname and os.path.exists(os.path.join("queue", tname)) else None
-
-        target_clip = clip
-        target_index = i
-        target_video_path = vpath
-        target_thumb_path = tpath
-        break
-
-    if not target_clip:
-        unposted = [
-            c for c in clips
-            if normalize_title(c.get("title") or c.get("youtube_title_final") or c.get("title_inggris", "")) not in published_titles
-            and safe_basename(c.get("output_file") or c.get("video_path")).lower() not in published_videos
-        ]
-        if unposted:
-            raise FileNotFoundError(f"Found {len(unposted)} pending clips in manifest, but their video files were not found in queue/ directory!")
-        print("[OK] All clips in queue have already been published! Nothing left to upload.")
-        return
-
-    title = target_clip.get("title") or target_clip.get("youtube_title_final") or target_clip.get("title_inggris", "")
-    caption = target_clip.get("instagram_caption_final") or target_clip.get("tiktok_caption_final") or target_clip.get("tiktok_caption")
-    if not caption or "✈️" not in caption:
-        caption = build_viral_instagram_caption(target_clip)
-
-    print(f"\n[CLOUD UPLOAD] Publishing next Clip: {title}")
-    print(f"   Video: {target_video_path}")
-    if target_thumb_path:
-        print(f"   Thumbnail: {target_thumb_path}")
-
-    # 1. Upload to YouTube Shorts (if configured & pacing allows: 2-3 shorts/day on fresh channel)
+    # ---------------------------------------------------------
+    # 1. INDEPENDENT YOUTUBE SHORTS PIPELINE (Every 6 hours)
+    # ---------------------------------------------------------
     yt_client = get_youtube_client()
-    yt_data = None
-    should_upload_yt = True
+    has_yt = bool(yt_client)
+    should_upload_yt = False
     if yt_client:
-        yt_interval_hours = 6.0  # Safe 6h pacing prevents bot-spam throttle on new channel
-        if os.path.exists(YT_RESULTS_FILE):
-            try:
-                with open(YT_RESULTS_FILE, "r", encoding="utf-8") as yf:
-                    yt_history = json.load(yf)
-                if yt_history:
-                    last_yt_ts = parse_iso_timestamp(yt_history[-1].get("timestamp", ""))
-                    if last_yt_ts:
-                        now_utc = datetime.now(timezone.utc)
-                        elapsed_yt = (now_utc.timestamp() - last_yt_ts.timestamp()) / 3600.0
-                        if elapsed_yt < yt_interval_hours:
-                            print(f"[YOUTUBE PACING] Last Short posted {elapsed_yt:.1f}h ago. YouTube pacing requires {yt_interval_hours}h for algorithm seeding. Skipping YouTube this cycle.")
-                            should_upload_yt = False
-            except Exception as e:
-                print(f"[WARN] Failed checking YouTube pacing: {e}")
+        should_upload_yt = True
+        yt_interval_hours = 6.0
+        if not force and yt_results:
+            last_yt_ts = parse_iso_timestamp(yt_results[-1].get("timestamp", ""))
+            if last_yt_ts:
+                elapsed_yt = (now_utc.timestamp() - last_yt_ts.timestamp()) / 3600.0
+                if elapsed_yt < yt_interval_hours:
+                    print(
+                        f"[YOUTUBE PACING] Last Short posted {elapsed_yt:.1f}h ago. "
+                        f"YouTube pacing requires {yt_interval_hours}h. Skipping YouTube this cycle."
+                    )
+                    should_upload_yt = False
 
     if yt_client and should_upload_yt:
-        try:
-            yt_data = upload_youtube_short(yt_client, target_video_path, target_clip)
-            # Save to youtube results file
-            yt_results = []
-            if os.path.exists(YT_RESULTS_FILE):
-                try:
-                    with open(YT_RESULTS_FILE, "r", encoding="utf-8") as yf:
-                        yt_results = json.load(yf)
-                except Exception:
-                    yt_results = []
-            yt_results.append({
-                "clip_index": target_index,
-                "video": target_video_path,
-                "title": yt_data["title"],
-                "video_id": yt_data["video_id"],
-                "url": yt_data["url"],
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            })
-            with open(YT_RESULTS_FILE, "w", encoding="utf-8") as yf:
-                json.dump(yt_results, yf, indent=2)
-        except Exception as e:
-            print(f"[WARN] YouTube upload failed: {e}")
+        live_yt_titles = fetch_existing_youtube_titles(yt_client)
+        combined_yt_titles = yt_published_titles | live_yt_titles
+        yt_next = find_next_clip(clips, yt_published_videos, combined_yt_titles)
+        if not yt_next:
+            print("[YOUTUBE] All available clips on disk are already published on YouTube.")
+        else:
+            yt_idx, yt_clip, yt_vpath, _ = yt_next
+            print(f"\n[CLOUD UPLOAD -> YOUTUBE] Clip {yt_idx}: {yt_vpath}")
+            try:
+                yt_data = upload_youtube_short(yt_client, yt_vpath, yt_clip)
+                yt_results.append({
+                    "clip_index": yt_idx,
+                    "video": yt_vpath,
+                    "title": yt_data["title"],
+                    "video_id": yt_data["video_id"],
+                    "url": yt_data["url"],
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+                save_json_list(YT_RESULTS_FILE, yt_results)
+                yt_vname = safe_basename(yt_vpath)
+                if yt_vname:
+                    yt_published_videos.add(yt_vname.lower())
+                yt_published_titles.add(normalize_title(yt_data["title"]))
+            except Exception as e:
+                print(f"[WARN] YouTube upload failed: {e}")
 
-    # 2. Upload to Instagram Reels
-    print(f"\n[INSTAGRAM UPLOAD] Publishing Reel to @chicanayaa: {title}")
-    cl = get_instagram_client()
+    # ---------------------------------------------------------
+    # 2. INDEPENDENT INSTAGRAM REELS PIPELINE (Every 2.5 hours)
+    # ---------------------------------------------------------
+    should_upload_ig = True
+    ig_failed_actively = False
 
-    upload_kwargs = {"path": target_video_path, "caption": caption}
-    if target_thumb_path:
-        upload_kwargs["thumbnail"] = target_thumb_path
+    if not force and ig_results:
+        pub_records = [r for r in ig_results if r.get("status") == "published" and r.get("timestamp")]
+        if pub_records:
+            last_pub = pub_records[-1]
+            last_ts = parse_iso_timestamp(last_pub.get("timestamp", ""))
+            if last_ts:
+                elapsed_ig = (now_utc.timestamp() - last_ts.timestamp()) / 3600.0
+                if elapsed_ig < min_interval_hours:
+                    remaining = min_interval_hours - elapsed_ig
+                    print(f"[PACING HOLD] Last Reel ('{last_pub.get('title')}') was uploaded {elapsed_ig:.2f}h ago.")
+                    print(f"   Next Instagram upload eligible in ~{remaining:.1f} hour(s).")
+                    should_upload_ig = False
 
-    try:
-        media = cl.clip_upload(**upload_kwargs)
-        media_id = getattr(media, "id", None) or getattr(media, "pk", "")
-        media_code = getattr(media, "code", "")
-        post_url = f"https://www.instagram.com/reel/{media_code}/" if media_code else ""
+        if should_upload_ig:
+            last_rec = ig_results[-1]
+            if last_rec.get("status") == "failed" and last_rec.get("auth_error"):
+                last_fp = last_rec.get("auth_fingerprint", "")
+                last_fail_ts = parse_iso_timestamp(last_rec.get("timestamp", ""))
+                if last_fp == auth_fp and last_fail_ts:
+                    elapsed_fail = (now_utc.timestamp() - last_fail_ts.timestamp()) / 3600.0
+                    if elapsed_fail < IG_AUTH_COOLDOWN_HOURS:
+                        rem_cd = IG_AUTH_COOLDOWN_HOURS - elapsed_fail
+                        print(
+                            f"[IG AUTH COOLDOWN] Last auth failure with current IG secrets was {elapsed_fail:.2f}h ago. "
+                            f"Waiting {rem_cd:.1f}h (or until IG_SESSIONID/IG_SETTINGS is refreshed) to avoid login throttling."
+                        )
+                        should_upload_ig = False
 
-        print(f"\n[SUCCESS] Instagram Reel Published! {post_url}")
+    if should_upload_ig:
+        ig_next = find_next_clip(clips, ig_published_videos, ig_published_titles)
+        if not ig_next:
+            print("[OK] All available clips on disk have already been published on Instagram.")
+        else:
+            ig_idx, ig_clip, ig_vpath, ig_tpath = ig_next
+            title = ig_clip.get("title") or ig_clip.get("youtube_title_final") or ig_clip.get("title_inggris", "")
+            caption = (
+                ig_clip.get("instagram_caption_final")
+                or ig_clip.get("tiktok_caption_final")
+                or ig_clip.get("tiktok_caption")
+            )
+            if not caption or "✈️" not in caption:
+                caption = build_viral_instagram_caption(ig_clip)
 
-        result_entry = {
-            "clip_index": target_index,
-            "video": target_video_path,
-            "title": title,
-            "status": "published",
-            "media_id": str(media_id),
-            "url": post_url,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
-        if yt_data:
-            result_entry["youtube_url"] = yt_data["url"]
+            print(f"\n[INSTAGRAM UPLOAD] Publishing Clip {ig_idx} to @chicanayaa: {title}")
+            print(f"   Video: {ig_vpath}")
+            if ig_tpath:
+                print(f"   Thumbnail: {ig_tpath}")
 
-        results.append(result_entry)
+            try:
+                cl = get_instagram_client()
+                upload_kwargs = {"path": ig_vpath, "caption": caption}
+                if ig_tpath:
+                    upload_kwargs["thumbnail"] = ig_tpath
 
-        with open(RESULTS_FILE, "w", encoding="utf-8") as f:
-            json.dump(results, f, indent=2)
+                media = cl.clip_upload(**upload_kwargs)
+                media_id = getattr(media, "id", None) or getattr(media, "pk", "")
+                media_code = getattr(media, "code", "")
+                post_url = f"https://www.instagram.com/reel/{media_code}/" if media_code else ""
+                print(f"\n[SUCCESS] Instagram Reel Published! {post_url}")
 
-        # Delete local copy to keep repo clean
-        if os.path.exists(target_video_path):
-            os.remove(target_video_path)
-            print(f"   Deleted published video from queue: {target_video_path}")
-        if target_thumb_path and os.path.exists(target_thumb_path):
-            os.remove(target_thumb_path)
-            print(f"   Deleted thumbnail: {target_thumb_path}")
+                ig_results.append({
+                    "clip_index": ig_idx,
+                    "video": ig_vpath,
+                    "title": title,
+                    "status": "published",
+                    "media_id": str(media_id),
+                    "url": post_url,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+                save_json_list(RESULTS_FILE, ig_results)
+                ig_vname = safe_basename(ig_vpath)
+                if ig_vname:
+                    ig_published_videos.add(ig_vname.lower())
+                ig_published_titles.add(normalize_title(title))
+            except Exception as e:
+                err_str = str(e)
+                print(f"[ERR] Instagram upload failed: {err_str}")
+                ig_results.append({
+                    "clip_index": ig_idx,
+                    "video": ig_vpath,
+                    "title": title,
+                    "status": "failed",
+                    "auth_error": is_auth_related_error(err_str),
+                    "auth_fingerprint": auth_fp,
+                    "error": err_str,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+                save_json_list(RESULTS_FILE, ig_results)
+                ig_failed_actively = True
 
-    except Exception as e:
-        print(f"[ERR] Instagram upload failed: {e}")
-        results.append({
-            "clip_index": target_index,
-            "video": target_video_path,
-            "title": title,
-            "status": "failed",
-            "error": str(e),
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        })
-        with open(RESULTS_FILE, "w", encoding="utf-8") as f:
-            json.dump(results, f, indent=2)
-        raise
+    # ---------------------------------------------------------
+    # 3. CLEANUP FILES ONLY AFTER ALL ACTIVE PLATFORMS FINISH
+    # ---------------------------------------------------------
+    cleanup_completed_files(
+        clips,
+        ig_published_videos,
+        ig_published_titles,
+        yt_published_videos,
+        yt_published_titles,
+        has_yt,
+    )
+
+    if ig_failed_actively:
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", default=DEFAULT_MANIFEST)
     parser.add_argument("--test-mode", action="store_true", default=True)
-    parser.add_argument("--min-interval", type=float, default=2.5, help="Minimum interval in hours between uploads")
-    parser.add_argument("--force", action="store_true", help="Force upload now, ignoring interval")
+    parser.add_argument("--min-interval", type=float, default=2.5, help="Minimum interval in hours between IG uploads")
+    parser.add_argument("--force", action="store_true", help="Force upload now, ignoring interval & cooldown")
     args = parser.parse_args()
 
-    run_cloud_upload(
+    exit_code = run_cloud_upload(
         manifest_path=args.manifest,
         test_mode=args.test_mode,
         min_interval_hours=args.min_interval,
-        force=args.force
+        force=args.force,
     )
+    sys.exit(exit_code)

@@ -54,6 +54,7 @@ jobs:
           python uploader.py --manifest queue/render_manifest.json --min-interval 2.5 $EXTRA_ARGS
 
       - name: Commit & Push Updated Queue
+        if: always()
         run: |
           git config --global user.name "Cloud Uploader Bot"
           git config --global user.email "bot@clipping.cloud"
