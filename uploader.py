@@ -41,8 +41,8 @@ IG_AUTH_COOLDOWN_HOURS = 6.0
 IST_TZ = timezone(timedelta(hours=5, minutes=30))
 QUIET_START_HOUR_IST = 1.0   # 01:00 AM IST
 QUIET_END_HOUR_IST = 7.5     # 07:30 AM IST
-YT_PEAK_START_HOUR_IST = 17.5  # 05:30 PM IST (India prime evening Shorts window)
-YT_PEAK_END_HOUR_IST = 22.5    # 10:30 PM IST
+PEAK_START_HOUR_IST = 17.5   # 05:30 PM IST (India prime evening window for YT & IG)
+PEAK_END_HOUR_IST = 22.5     # 10:30 PM IST
 PLAYLIST_BY_PILLAR = {
     "gameplay": "PLZ-j05R9sLtw",
     "comedy": "PLRdva2Nr33t8",
@@ -197,10 +197,34 @@ def in_quiet_hours_ist(now_utc):
     return QUIET_START_HOUR_IST <= hour_float < QUIET_END_HOUR_IST, now_ist
 
 
-def in_yt_peak_window_ist(now_utc):
+def in_peak_window_ist(now_utc):
+    """Return whether now_utc falls within India prime evening (17:30-22:30 IST)."""
     now_ist = now_utc.astimezone(IST_TZ)
     hour_float = now_ist.hour + now_ist.minute / 60.0
-    return YT_PEAK_START_HOUR_IST <= hour_float < YT_PEAK_END_HOUR_IST, now_ist
+    return PEAK_START_HOUR_IST <= hour_float < PEAK_END_HOUR_IST, now_ist
+
+
+def _evaluate_platform_window(records, interval_hours, now_utc, now_ist, force, respect_peak_window):
+    """Evaluate India evening peak window, IST calendar-day cap, and interval cooldown."""
+    if not force and respect_peak_window:
+        peak_ok, _ = in_peak_window_ist(now_utc)
+        if not peak_ok:
+            return False, f"Waiting for India peak evening (17:30-22:30 IST, now {now_ist.strftime('%H:%M')})"
+
+    if not force and records:
+        pub_records = [r for r in records if r.get("status", "published") == "published" and r.get("timestamp")]
+        if pub_records:
+            last_ts = parse_iso_timestamp(pub_records[-1].get("timestamp", ""))
+            if last_ts:
+                last_ist = last_ts.astimezone(IST_TZ)
+                if interval_hours >= 12.0 and last_ist.date() == now_ist.date():
+                    return False, f"Daily cap reached (uploaded {last_ist.strftime('%d-%b %H:%M IST')})"
+                elapsed = (now_utc.timestamp() - last_ts.timestamp()) / 3600.0
+                if elapsed < interval_hours:
+                    rem = interval_hours - elapsed
+                    return False, f"Pacing hold ({elapsed:.1f}h / {interval_hours:.1f}h, next in ~{rem:.1f}h)"
+
+    return True, "Eligible"
 
 
 def evaluate_schedules(
@@ -213,7 +237,7 @@ def evaluate_schedules(
     respect_quiet_hours,
     now_utc,
     auth_fp,
-    respect_yt_peak=True,
+    respect_peak_window=True,
 ):
     quiet_active, now_ist = in_quiet_hours_ist(now_utc)
     if quiet_active and respect_quiet_hours and not force:
@@ -225,38 +249,18 @@ def evaluate_schedules(
 
     # YouTube eligibility check (pure local state, zero network calls)
     has_yt_token = bool(os.getenv("YOUTUBE_TOKEN", "").strip() or os.path.exists("queue/youtube_token.json"))
-    should_upload_yt = False
-    yt_reason = "No YOUTUBE_TOKEN configured"
     if has_yt_token:
-        yt_peak_ok, _ = in_yt_peak_window_ist(now_utc)
-        if respect_yt_peak and not force and not yt_peak_ok:
-            yt_reason = f"Waiting for India peak evening (17:30-22:30 IST, now {now_ist.strftime('%H:%M')})"
-        else:
-            should_upload_yt = True
-            yt_reason = "Eligible"
-            if not force and yt_results:
-                last_yt_ts = parse_iso_timestamp(yt_results[-1].get("timestamp", ""))
-                if last_yt_ts:
-                    elapsed_yt = (now_utc.timestamp() - last_yt_ts.timestamp()) / 3600.0
-                    if elapsed_yt < yt_interval_hours:
-                        should_upload_yt = False
-                        yt_reason = f"Pacing hold ({elapsed_yt:.1f}h / {yt_interval_hours:.1f}h)"
+        should_upload_yt, yt_reason = _evaluate_platform_window(
+            yt_results, yt_interval_hours, now_utc, now_ist, force, respect_peak_window
+        )
+    else:
+        should_upload_yt, yt_reason = False, "No YOUTUBE_TOKEN configured"
 
     # Instagram eligibility check (pure local state, zero network calls)
-    should_upload_ig = True
-    ig_reason = "Eligible"
+    should_upload_ig, ig_reason = _evaluate_platform_window(
+        ig_results, min_interval_hours, now_utc, now_ist, force, respect_peak_window
+    )
     if not force and ig_results:
-        pub_records = [r for r in ig_results if r.get("status") == "published" and r.get("timestamp")]
-        if pub_records:
-            last_pub = pub_records[-1]
-            last_ts = parse_iso_timestamp(last_pub.get("timestamp", ""))
-            if last_ts:
-                elapsed_ig = (now_utc.timestamp() - last_ts.timestamp()) / 3600.0
-                if elapsed_ig < min_interval_hours:
-                    rem = min_interval_hours - elapsed_ig
-                    should_upload_ig = False
-                    ig_reason = f"Pacing hold ({elapsed_ig:.2f}h / {min_interval_hours:.1f}h, next in ~{rem:.1f}h)"
-
         if should_upload_ig:
             last_rec = ig_results[-1]
             if last_rec.get("status") == "failed" and last_rec.get("auth_error"):
@@ -732,12 +736,12 @@ def cleanup_completed_files(clips, ig_published_videos, ig_published_titles, yt_
 
 def run_cloud_upload(
     manifest_path=DEFAULT_MANIFEST,
-    min_interval_hours=2.5,
+    min_interval_hours=18.0,
     yt_interval_hours=18.0,
     force=False,
     plan_only=False,
     respect_quiet_hours=True,
-    respect_yt_peak=True,
+    respect_peak_window=True,
 ):
     if not os.path.exists(manifest_path):
         print(f"[ERR] Manifest not found: {manifest_path}")
@@ -784,7 +788,7 @@ def run_cloud_upload(
         respect_quiet_hours,
         now_utc,
         auth_fp,
-        respect_yt_peak=respect_yt_peak,
+        respect_peak_window=respect_peak_window,
     )
 
     yt_next = find_next_clip(clips, yt_published_videos, yt_published_titles, available_files) if should_upload_yt else None
@@ -951,12 +955,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", default=DEFAULT_MANIFEST)
     parser.add_argument("--test-mode", action="store_true", default=True)
-    parser.add_argument("--min-interval", type=float, default=2.5, help="Minimum interval in hours between IG uploads")
+    parser.add_argument("--min-interval", type=float, default=18.0, help="Minimum interval in hours between IG uploads")
     parser.add_argument("--yt-interval", type=float, default=18.0, help="Minimum interval in hours between YT uploads")
     parser.add_argument("--force", action="store_true", help="Force upload now, ignoring interval, cooldown & quiet hours")
     parser.add_argument("--plan-only", action="store_true", help="Stdlib-only fast pacing & sparse-fetch planner")
     parser.add_argument("--no-quiet-hours", action="store_true", help="Disable IST overnight quiet window (01:00-07:30 IST)")
-    parser.add_argument("--no-yt-peak-window", action="store_true", help="Allow YT uploads outside 17:30-22:30 IST prime evening")
+    parser.add_argument(
+        "--no-peak-window",
+        "--no-yt-peak-window",
+        dest="no_peak_window",
+        action="store_true",
+        help="Allow YT & IG uploads outside 17:30-22:30 IST prime evening",
+    )
     args = parser.parse_args()
 
     exit_code = run_cloud_upload(
@@ -966,6 +976,6 @@ if __name__ == "__main__":
         force=args.force,
         plan_only=args.plan_only,
         respect_quiet_hours=not args.no_quiet_hours,
-        respect_yt_peak=not args.no_yt_peak_window,
+        respect_peak_window=not args.no_peak_window,
     )
     sys.exit(exit_code)

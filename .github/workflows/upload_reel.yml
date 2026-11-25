@@ -2,8 +2,8 @@ name: 24/7 Instagram Reel Cloud Uploader
 
 on:
   schedule:
-    # Backup internal cron (primary 30m trigger runs via external cron-job.org dispatch)
-    - cron: '15 */2 * * *'
+    # Backup internal cron during India evening peak (primary 30m trigger runs via external cron-job.org dispatch)
+    - cron: '35 12,14 * * *'
   workflow_dispatch:
     inputs:
       force:
@@ -50,7 +50,7 @@ jobs:
           if [ "${{ inputs.force }}" = "true" ]; then
             EXTRA_ARGS="--force"
           fi
-          python3 uploader.py --plan-only --manifest queue/render_manifest.json --min-interval 2.5 --yt-interval 18.0 $EXTRA_ARGS
+          python3 uploader.py --plan-only --manifest queue/render_manifest.json --min-interval 18.0 --yt-interval 18.0 $EXTRA_ARGS
 
       - name: Fetch Needed Video Blob(s) Only
         if: steps.plan.outputs.run_needed == 'true' && steps.plan.outputs.fetch_files != ''
@@ -82,7 +82,7 @@ jobs:
           if [ "${{ inputs.force }}" = "true" ]; then
             EXTRA_ARGS="--force"
           fi
-          python uploader.py --manifest queue/render_manifest.json --min-interval 2.5 --yt-interval 18.0 $EXTRA_ARGS
+          python uploader.py --manifest queue/render_manifest.json --min-interval 18.0 --yt-interval 18.0 $EXTRA_ARGS
 
       - name: Commit & Push Updated Queue
         if: ${{ !cancelled() && steps.plan.outputs.run_needed == 'true' }}
