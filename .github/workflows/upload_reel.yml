@@ -2,12 +2,12 @@ name: 24/7 Instagram Reel Cloud Uploader
 
 on:
   schedule:
-    # Backup internal cron (runs every 20 mins)
-    - cron: '*/20 * * * *'
-  workflow_dispatch: # Primary trigger via external webhook (cron-job.org)
+    # Backup internal cron (primary 30m trigger runs via external cron-job.org dispatch)
+    - cron: '15 */2 * * *'
+  workflow_dispatch:
     inputs:
       force:
-        description: 'Force immediate upload (ignore 2.5h spacing)'
+        description: 'Force immediate upload (ignore spacing & quiet hours)'
         required: false
         type: boolean
         default: false
@@ -24,22 +24,21 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Metadata Only (Blobless)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /uploader.py
+            /requirements.txt
+            /queue/render_manifest.json
+            /queue/instagram_upload_results.json
+            /queue/youtube_upload_results.json
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Run Cloud Upload (Next 1 Clip)
+      - name: Fast Pre-Check Pacing & Plan Files
+        id: plan
         env:
           IG_USERNAME: ${{ secrets.IG_USERNAME }}
           IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
@@ -51,10 +50,42 @@ jobs:
           if [ "${{ inputs.force }}" = "true" ]; then
             EXTRA_ARGS="--force"
           fi
-          python uploader.py --manifest queue/render_manifest.json --min-interval 2.5 $EXTRA_ARGS
+          python3 uploader.py --plan-only --manifest queue/render_manifest.json --min-interval 2.5 --yt-interval 6.0 $EXTRA_ARGS
+
+      - name: Fetch Needed Video Blob(s) Only
+        if: steps.plan.outputs.run_needed == 'true' && steps.plan.outputs.fetch_files != ''
+        run: |
+          git sparse-checkout add ${{ steps.plan.outputs.fetch_files }}
+
+      - name: Set up Python
+        if: steps.plan.outputs.run_needed == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        if: steps.plan.outputs.run_needed == 'true'
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Cloud Upload
+        if: steps.plan.outputs.run_needed == 'true'
+        env:
+          IG_USERNAME: ${{ secrets.IG_USERNAME }}
+          IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
+          IG_SESSIONID: ${{ secrets.IG_SESSIONID }}
+          IG_SETTINGS: ${{ secrets.IG_SETTINGS }}
+          YOUTUBE_TOKEN: ${{ secrets.YOUTUBE_TOKEN }}
+        run: |
+          EXTRA_ARGS=""
+          if [ "${{ inputs.force }}" = "true" ]; then
+            EXTRA_ARGS="--force"
+          fi
+          python uploader.py --manifest queue/render_manifest.json --min-interval 2.5 --yt-interval 6.0 $EXTRA_ARGS
 
       - name: Commit & Push Updated Queue
-        if: always()
+        if: ${{ !cancelled() && steps.plan.outputs.run_needed == 'true' }}
         run: |
           git config --global user.name "Cloud Uploader Bot"
           git config --global user.email "bot@clipping.cloud"
@@ -62,7 +93,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "Auto-published next Instagram Reel & cleaned up queue [auto-queue]"
-            git pull --rebase origin main
+            git commit -m "Auto-published clip & synced queue [auto-queue]"
+            git pull --rebase --autostash origin main
             git push origin main
           fi

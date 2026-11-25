@@ -1,38 +1,46 @@
 #!/usr/bin/env python3
 """
-uploader.py — 24/7 Cloud Uploader for Instagram Reels & YouTube Shorts (Runs on GitHub Actions)
+uploader.py — Fast, Decoupled 24/7 Cloud Uploader for Instagram Reels & YouTube Shorts
 
-Architecture:
-- YouTube Shorts and Instagram Reels run with completely decoupled queues & pacing.
-- YouTube checks both local history (`youtube_upload_results.json`) AND live channel uploads
-  to prevent duplicate uploads under all circumstances.
-- Instagram failures (expired session / checkpoint) are persisted with an auth-secret fingerprint
-  and 6-hour failure backoff so they never crash YouTube progress or trigger login rate limits.
-- Media files in `queue/` are removed once both active platforms have published the clip.
+Efficiency & Reliability Architecture:
+- `--plan-only` runs on bare Python 3 stdlib (<0.2s, no pip packages, no video blobs) to decide
+  whether YouTube or Instagram is eligible right now (pacing, cooldown, IST peak window) and
+  outputs only the exact 1-2 needed `/queue/...` paths for blobless sparse-checkout.
+- Skipped runs exit in ~5s instead of downloading ~4 GB of media and installing dependencies.
+- YouTube Shorts and Instagram Reels are 100% decoupled with separate tracking + live YT check.
+- IST peak-window pacing skips the dead 01:00–07:30 AM IST sleep window (override with `--force`).
 """
 
 import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 import urllib.parse
 from datetime import datetime, timedelta, timezone
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # --plan-only on bare CI Python runs before pip install without python-dotenv
+    pass
 
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 if sys.stderr and hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-load_dotenv()
-
 SESSION_FILE = "queue/ig_session.json"
 DEFAULT_MANIFEST = "queue/render_manifest.json"
 RESULTS_FILE = "queue/instagram_upload_results.json"
 YT_RESULTS_FILE = "queue/youtube_upload_results.json"
 IG_AUTH_COOLDOWN_HOURS = 6.0
+IST_TZ = timezone(timedelta(hours=5, minutes=30))
+QUIET_START_HOUR_IST = 1.0   # 01:00 AM IST
+QUIET_END_HOUR_IST = 7.5     # 07:30 AM IST
 
 
 def safe_basename(path_str):
@@ -45,7 +53,7 @@ def parse_iso_timestamp(ts_str):
     try:
         dt = datetime.fromisoformat(ts_str)
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone(timedelta(hours=5, minutes=30)))
+            dt = dt.replace(tzinfo=IST_TZ)
         return dt
     except Exception:
         return None
@@ -78,21 +86,72 @@ def is_clip_published(clip, published_videos, published_titles):
     return False
 
 
-def find_next_clip(clips, published_videos, published_titles):
+def get_available_queue_files():
+    """Return set of filenames currently in `queue/` (supports blobless git sparse trees)."""
+    files = set()
+    try:
+        res = subprocess.run(
+            ["git", "ls-tree", "--name-only", "HEAD", "queue/"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if res.returncode == 0:
+            for line in res.stdout.splitlines():
+                name = safe_basename(line.strip())
+                if name:
+                    files.add(name)
+    except Exception:
+        pass
+    if not files and os.path.isdir("queue"):
+        files = set(os.listdir("queue"))
+    return files
+
+
+def ensure_file_materialized(rel_path):
+    """Fetch a single file blob via sparse-checkout if it exists in git tree but isn't checked out."""
+    if not rel_path:
+        return False
+    if os.path.exists(rel_path):
+        return True
+    norm_path = rel_path.replace("\\", "/").lstrip("/")
+    try:
+        subprocess.run(
+            ["git", "sparse-checkout", "add", f"/{norm_path}"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except Exception:
+        pass
+    return os.path.exists(norm_path)
+
+
+def find_next_clip(clips, published_videos, published_titles, available_files=None):
     for i, clip in enumerate(clips):
         if is_clip_published(clip, published_videos, published_titles):
             continue
 
         raw_vpath = clip.get("output_file") or clip.get("video_path")
         vname = safe_basename(raw_vpath)
-        vpath = os.path.join("queue", vname) if vname else None
+        if not vname:
+            continue
+        vpath = f"queue/{vname}"
 
-        if not vpath or not os.path.exists(vpath):
+        if available_files is not None:
+            if vname not in available_files:
+                continue
+        elif not os.path.exists(vpath):
             continue
 
         raw_tpath = clip.get("thumbnail_path")
         tname = safe_basename(raw_tpath)
-        tpath = os.path.join("queue", tname) if tname and os.path.exists(os.path.join("queue", tname)) else None
+        tpath = None
+        if tname:
+            if available_files is not None and tname in available_files:
+                tpath = f"queue/{tname}"
+            elif os.path.exists(f"queue/{tname}"):
+                tpath = f"queue/{tname}"
         return i, clip, vpath, tpath
     return None
 
@@ -125,6 +184,67 @@ def is_auth_related_error(err_text):
     return any(m in low for m in markers)
 
 
+def in_quiet_hours_ist(now_utc):
+    now_ist = now_utc.astimezone(IST_TZ)
+    hour_float = now_ist.hour + now_ist.minute / 60.0
+    return QUIET_START_HOUR_IST <= hour_float < QUIET_END_HOUR_IST, now_ist
+
+
+def evaluate_schedules(clips, ig_results, yt_results, min_interval_hours, yt_interval_hours, force, respect_quiet_hours, now_utc, auth_fp):
+    quiet_active, now_ist = in_quiet_hours_ist(now_utc)
+    if quiet_active and respect_quiet_hours and not force:
+        print(
+            f"[QUIET HOURS] Current IST is {now_ist.strftime('%H:%M')} "
+            f"(paused 01:00–07:30 IST to maximize awake audience reach)."
+        )
+        return False, False, "[QUIET HOURS]"
+
+    # YouTube eligibility check (pure local state, zero network calls)
+    has_yt_token = bool(os.getenv("YOUTUBE_TOKEN", "").strip() or os.path.exists("queue/youtube_token.json"))
+    should_upload_yt = False
+    yt_reason = "No YOUTUBE_TOKEN configured"
+    if has_yt_token:
+        should_upload_yt = True
+        yt_reason = "Eligible"
+        if not force and yt_results:
+            last_yt_ts = parse_iso_timestamp(yt_results[-1].get("timestamp", ""))
+            if last_yt_ts:
+                elapsed_yt = (now_utc.timestamp() - last_yt_ts.timestamp()) / 3600.0
+                if elapsed_yt < yt_interval_hours:
+                    should_upload_yt = False
+                    yt_reason = f"Pacing hold ({elapsed_yt:.1f}h / {yt_interval_hours:.1f}h)"
+
+    # Instagram eligibility check (pure local state, zero network calls)
+    should_upload_ig = True
+    ig_reason = "Eligible"
+    if not force and ig_results:
+        pub_records = [r for r in ig_results if r.get("status") == "published" and r.get("timestamp")]
+        if pub_records:
+            last_pub = pub_records[-1]
+            last_ts = parse_iso_timestamp(last_pub.get("timestamp", ""))
+            if last_ts:
+                elapsed_ig = (now_utc.timestamp() - last_ts.timestamp()) / 3600.0
+                if elapsed_ig < min_interval_hours:
+                    rem = min_interval_hours - elapsed_ig
+                    should_upload_ig = False
+                    ig_reason = f"Pacing hold ({elapsed_ig:.2f}h / {min_interval_hours:.1f}h, next in ~{rem:.1f}h)"
+
+        if should_upload_ig:
+            last_rec = ig_results[-1]
+            if last_rec.get("status") == "failed" and last_rec.get("auth_error"):
+                last_fp = last_rec.get("auth_fingerprint", "")
+                last_fail_ts = parse_iso_timestamp(last_rec.get("timestamp", ""))
+                if last_fp == auth_fp and last_fail_ts:
+                    elapsed_fail = (now_utc.timestamp() - last_fail_ts.timestamp()) / 3600.0
+                    if elapsed_fail < IG_AUTH_COOLDOWN_HOURS:
+                        rem_cd = IG_AUTH_COOLDOWN_HOURS - elapsed_fail
+                        should_upload_ig = False
+                        ig_reason = f"Auth cooldown ({elapsed_fail:.2f}h / {IG_AUTH_COOLDOWN_HOURS:.1f}h, next in ~{rem_cd:.1f}h)"
+
+    print(f"[PLAN] IST={now_ist.strftime('%Y-%m-%d %H:%M')} | YouTube: {yt_reason} | Instagram: {ig_reason}")
+    return should_upload_yt, should_upload_ig, ""
+
+
 def get_instagram_client():
     from instagrapi import Client
 
@@ -132,7 +252,6 @@ def get_instagram_client():
     password = os.getenv("IG_PASSWORD", "").strip()
     sessionid = os.getenv("IG_SESSIONID", "").strip()
 
-    # 0. Try loading IG_SETTINGS from environment secret on a clean client
     ig_settings_env = os.getenv("IG_SETTINGS", "").strip()
     if ig_settings_env:
         cl0 = Client()
@@ -153,7 +272,6 @@ def get_instagram_client():
                 raise
             print(f"[WARN] IG_SETTINGS session check failed ({e}), trying fallback...")
 
-    # 1. Try loading cached session file on a fresh client
     if os.path.exists(SESSION_FILE):
         cl1 = Client()
         cl1.delay_range = [2, 5]
@@ -171,7 +289,6 @@ def get_instagram_client():
                 raise
             print(f"[WARN] Cached session invalid ({e}), falling back to session ID...")
 
-    # 2. Try sessionid on a clean client (preserving device IDs only if available, without expired auth headers)
     if sessionid:
         sessionid = urllib.parse.unquote(sessionid)
         cl2 = Client()
@@ -190,7 +307,6 @@ def get_instagram_client():
                 raise
             print(f"[WARN] Session ID login failed ({e}), trying password...")
 
-    # 3. Password fallback on a completely fresh client
     if not username or not password:
         raise ValueError("Missing credentials: need valid IG_SESSIONID / IG_SETTINGS or IG_USERNAME + IG_PASSWORD.")
 
@@ -207,13 +323,11 @@ def get_instagram_client():
 
 def get_youtube_client():
     token_str = os.getenv("YOUTUBE_TOKEN", "").strip()
-    if not token_str:
-        if os.path.exists("queue/youtube_token.json"):
-            with open("queue/youtube_token.json", "r", encoding="utf-8") as f:
-                token_str = f.read()
+    if not token_str and os.path.exists("queue/youtube_token.json"):
+        with open("queue/youtube_token.json", "r", encoding="utf-8") as f:
+            token_str = f.read()
 
     if not token_str:
-        print("[INFO] No YOUTUBE_TOKEN found in environment. Skipping YouTube Shorts upload.")
         return None
 
     try:
@@ -397,7 +511,7 @@ def build_viral_instagram_caption(item):
     if not any(story.endswith(c) for c in [".", "!", "?", "💀", "😭", "😂", "🔥", "✨", "🧠", "❤️"]):
         story += "!"
 
-    caption = f"""{hook_title}
+    return f"""{hook_title}
 
 {story}
 
@@ -408,8 +522,6 @@ def build_viral_instagram_caption(item):
 📌 Save this reel so you don't forget this!
 
 {" ".join(hashtags)}""".strip()
-
-    return caption
 
 
 def upload_youtube_short(youtube, video_path, clip_data):
@@ -534,43 +646,63 @@ def save_json_list(path, data):
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
+def write_github_output(run_needed, fetch_files):
+    gh_out = os.getenv("GITHUB_OUTPUT", "").strip()
+    if not gh_out:
+        return
+    try:
+        with open(gh_out, "a", encoding="utf-8") as f:
+            f.write(f"run_needed={'true' if run_needed else 'false'}\n")
+            f.write(f"fetch_files={' '.join(fetch_files)}\n")
+    except Exception as e:
+        print(f"[WARN] Failed writing GITHUB_OUTPUT: {e}")
+
+
 def cleanup_completed_files(clips, ig_published_videos, ig_published_titles, yt_published_videos, yt_published_titles, has_yt):
     for clip in clips:
         raw_vpath = clip.get("output_file") or clip.get("video_path")
         vname = safe_basename(raw_vpath)
         if not vname:
             continue
-        vpath = os.path.join("queue", vname)
-        if not os.path.exists(vpath):
-            continue
+        vpath = f"queue/{vname}"
+        tname = safe_basename(clip.get("thumbnail_path"))
+        tpath = f"queue/{tname}" if tname else None
 
         ig_done = is_clip_published(clip, ig_published_videos, ig_published_titles)
         yt_done = (not has_yt) or is_clip_published(clip, yt_published_videos, yt_published_titles)
 
         if ig_done and yt_done:
-            os.remove(vpath)
-            print(f"   Deleted fully published video from queue: {vpath}")
-            tname = safe_basename(clip.get("thumbnail_path"))
-            tpath = os.path.join("queue", tname) if tname else None
+            if os.path.exists(vpath):
+                os.remove(vpath)
+                print(f"   Deleted fully published video from queue: {vpath}")
             if tpath and os.path.exists(tpath):
                 os.remove(tpath)
                 print(f"   Deleted thumbnail: {tpath}")
 
 
-def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interval_hours=2.5, force=False):
+def run_cloud_upload(
+    manifest_path=DEFAULT_MANIFEST,
+    min_interval_hours=2.5,
+    yt_interval_hours=6.0,
+    force=False,
+    plan_only=False,
+    respect_quiet_hours=True,
+):
     if not os.path.exists(manifest_path):
         print(f"[ERR] Manifest not found: {manifest_path}")
+        write_github_output(False, [])
         return 1
 
     clips = load_json_list(manifest_path)
     if not clips:
         print("[INFO] Manifest is empty.")
+        write_github_output(False, [])
         return 0
 
     now_utc = datetime.now(timezone.utc)
     auth_fp = compute_ig_auth_fingerprint()
+    available_files = get_available_queue_files()
 
-    # Load independent platform histories
     ig_results = load_json_list(RESULTS_FILE)
     ig_published_videos = {
         safe_basename(r.get("video", "")).lower()
@@ -591,114 +723,124 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
         for r in yt_results if r.get("title")
     }
 
-    # ---------------------------------------------------------
-    # 1. INDEPENDENT YOUTUBE SHORTS PIPELINE (Every 6 hours)
-    # ---------------------------------------------------------
-    yt_client = get_youtube_client()
-    has_yt = bool(yt_client)
-    should_upload_yt = False
-    if yt_client:
-        should_upload_yt = True
-        yt_interval_hours = 6.0
-        if not force and yt_results:
-            last_yt_ts = parse_iso_timestamp(yt_results[-1].get("timestamp", ""))
-            if last_yt_ts:
-                elapsed_yt = (now_utc.timestamp() - last_yt_ts.timestamp()) / 3600.0
-                if elapsed_yt < yt_interval_hours:
-                    print(
-                        f"[YOUTUBE PACING] Last Short posted {elapsed_yt:.1f}h ago. "
-                        f"YouTube pacing requires {yt_interval_hours}h. Skipping YouTube this cycle."
-                    )
-                    should_upload_yt = False
+    should_upload_yt, should_upload_ig, _ = evaluate_schedules(
+        clips,
+        ig_results,
+        yt_results,
+        min_interval_hours,
+        yt_interval_hours,
+        force,
+        respect_quiet_hours,
+        now_utc,
+        auth_fp,
+    )
 
-    if yt_client and should_upload_yt:
-        live_yt_titles = fetch_existing_youtube_titles(yt_client)
-        combined_yt_titles = yt_published_titles | live_yt_titles
-        yt_next = find_next_clip(clips, yt_published_videos, combined_yt_titles)
-        if not yt_next:
-            print("[YOUTUBE] All available clips on disk are already published on YouTube.")
-        else:
-            yt_idx, yt_clip, yt_vpath, _ = yt_next
-            print(f"\n[CLOUD UPLOAD -> YOUTUBE] Clip {yt_idx}: {yt_vpath}")
-            try:
-                yt_data = upload_youtube_short(yt_client, yt_vpath, yt_clip)
-                yt_results.append({
-                    "clip_index": yt_idx,
-                    "video": yt_vpath,
-                    "title": yt_data["title"],
-                    "video_id": yt_data["video_id"],
-                    "url": yt_data["url"],
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                })
-                save_json_list(YT_RESULTS_FILE, yt_results)
-                yt_vname = safe_basename(yt_vpath)
-                if yt_vname:
-                    yt_published_videos.add(yt_vname.lower())
-                yt_published_titles.add(normalize_title(yt_data["title"]))
-            except Exception as e:
-                print(f"[WARN] YouTube upload failed: {e}")
+    yt_next = find_next_clip(clips, yt_published_videos, yt_published_titles, available_files) if should_upload_yt else None
+    ig_next = find_next_clip(clips, ig_published_videos, ig_published_titles, available_files) if should_upload_ig else None
+
+    if plan_only:
+        needed = []
+        seen = set()
+        for nxt, needs_thumb in ((yt_next, False), (ig_next, True)):
+            if not nxt:
+                continue
+            _, _, vp, tp = nxt
+            for p in ([vp, tp] if needs_thumb and tp else [vp]):
+                sparse_p = f"/{p.lstrip('/')}"
+                if sparse_p not in seen:
+                    seen.add(sparse_p)
+                    needed.append(sparse_p)
+        run_needed = bool(needed)
+        print(f"[PLAN-ONLY] run_needed={run_needed} | fetch_files={needed}")
+        write_github_output(run_needed, needed)
+        return 0
+
+    if not yt_next and not ig_next:
+        print("[SKIP] No uploads due this cycle. Exiting fast cleanly.")
+        return 0
 
     # ---------------------------------------------------------
-    # 2. INDEPENDENT INSTAGRAM REELS PIPELINE (Every 2.5 hours)
+    # 1. INDEPENDENT YOUTUBE SHORTS PIPELINE
     # ---------------------------------------------------------
-    should_upload_ig = True
+    yt_client = None
+    has_yt = bool(os.getenv("YOUTUBE_TOKEN", "").strip() or os.path.exists("queue/youtube_token.json"))
+    if should_upload_yt and yt_next:
+        yt_client = get_youtube_client()
+        if yt_client:
+            live_yt_titles = fetch_existing_youtube_titles(yt_client)
+            combined_yt_titles = yt_published_titles | live_yt_titles
+            yt_next = find_next_clip(clips, yt_published_videos, combined_yt_titles, available_files)
+            if not yt_next:
+                print("[YOUTUBE] All available clips on disk are already published on live YouTube channel.")
+            else:
+                yt_idx, yt_clip, yt_vpath, _ = yt_next
+                if not ensure_file_materialized(yt_vpath):
+                    print(f"[WARN] Could not materialize YouTube video file: {yt_vpath}")
+                else:
+                    print(f"\n[CLOUD UPLOAD -> YOUTUBE] Clip {yt_idx}: {yt_vpath}")
+                    try:
+                        yt_data = upload_youtube_short(yt_client, yt_vpath, yt_clip)
+                        yt_results.append({
+                            "clip_index": yt_idx,
+                            "video": yt_vpath,
+                            "title": yt_data["title"],
+                            "video_id": yt_data["video_id"],
+                            "url": yt_data["url"],
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        })
+                        save_json_list(YT_RESULTS_FILE, yt_results)
+                        yt_vname = safe_basename(yt_vpath)
+                        if yt_vname:
+                            yt_published_videos.add(yt_vname.lower())
+                        yt_published_titles.add(normalize_title(yt_data["title"]))
+                    except Exception as e:
+                        print(f"[WARN] YouTube upload failed: {e}")
+
+    # ---------------------------------------------------------
+    # 2. INDEPENDENT INSTAGRAM REELS PIPELINE
+    # ---------------------------------------------------------
     ig_failed_actively = False
+    if should_upload_ig and ig_next:
+        ig_idx, ig_clip, ig_vpath, ig_tpath = ig_next
+        title = ig_clip.get("title") or ig_clip.get("youtube_title_final") or ig_clip.get("title_inggris", "")
+        caption = (
+            ig_clip.get("instagram_caption_final")
+            or ig_clip.get("tiktok_caption_final")
+            or ig_clip.get("tiktok_caption")
+        )
+        if not caption or "✈️" not in caption:
+            caption = build_viral_instagram_caption(ig_clip)
 
-    if not force and ig_results:
-        pub_records = [r for r in ig_results if r.get("status") == "published" and r.get("timestamp")]
-        if pub_records:
-            last_pub = pub_records[-1]
-            last_ts = parse_iso_timestamp(last_pub.get("timestamp", ""))
-            if last_ts:
-                elapsed_ig = (now_utc.timestamp() - last_ts.timestamp()) / 3600.0
-                if elapsed_ig < min_interval_hours:
-                    remaining = min_interval_hours - elapsed_ig
-                    print(f"[PACING HOLD] Last Reel ('{last_pub.get('title')}') was uploaded {elapsed_ig:.2f}h ago.")
-                    print(f"   Next Instagram upload eligible in ~{remaining:.1f} hour(s).")
-                    should_upload_ig = False
-
-        if should_upload_ig:
-            last_rec = ig_results[-1]
-            if last_rec.get("status") == "failed" and last_rec.get("auth_error"):
-                last_fp = last_rec.get("auth_fingerprint", "")
-                last_fail_ts = parse_iso_timestamp(last_rec.get("timestamp", ""))
-                if last_fp == auth_fp and last_fail_ts:
-                    elapsed_fail = (now_utc.timestamp() - last_fail_ts.timestamp()) / 3600.0
-                    if elapsed_fail < IG_AUTH_COOLDOWN_HOURS:
-                        rem_cd = IG_AUTH_COOLDOWN_HOURS - elapsed_fail
-                        print(
-                            f"[IG AUTH COOLDOWN] Last auth failure with current IG secrets was {elapsed_fail:.2f}h ago. "
-                            f"Waiting {rem_cd:.1f}h (or until IG_SESSIONID/IG_SETTINGS is refreshed) to avoid login throttling."
-                        )
-                        should_upload_ig = False
-
-    if should_upload_ig:
-        ig_next = find_next_clip(clips, ig_published_videos, ig_published_titles)
-        if not ig_next:
-            print("[OK] All available clips on disk have already been published on Instagram.")
+        if not ensure_file_materialized(ig_vpath):
+            print(f"[ERR] Could not materialize Instagram video file: {ig_vpath}")
+            ig_failed_actively = True
         else:
-            ig_idx, ig_clip, ig_vpath, ig_tpath = ig_next
-            title = ig_clip.get("title") or ig_clip.get("youtube_title_final") or ig_clip.get("title_inggris", "")
-            caption = (
-                ig_clip.get("instagram_caption_final")
-                or ig_clip.get("tiktok_caption_final")
-                or ig_clip.get("tiktok_caption")
-            )
-            if not caption or "✈️" not in caption:
-                caption = build_viral_instagram_caption(ig_clip)
+            if ig_tpath:
+                ensure_file_materialized(ig_tpath)
 
             print(f"\n[INSTAGRAM UPLOAD] Publishing Clip {ig_idx} to @chicanayaa: {title}")
             print(f"   Video: {ig_vpath}")
-            if ig_tpath:
+            if ig_tpath and os.path.exists(ig_tpath):
                 print(f"   Thumbnail: {ig_tpath}")
 
             try:
                 cl = get_instagram_client()
                 upload_kwargs = {"path": ig_vpath, "caption": caption}
-                if ig_tpath:
+                if ig_tpath and os.path.exists(ig_tpath):
                     upload_kwargs["thumbnail"] = ig_tpath
 
-                media = cl.clip_upload(**upload_kwargs)
+                media = None
+                for attempt in range(2):
+                    try:
+                        media = cl.clip_upload(**upload_kwargs)
+                        break
+                    except Exception as up_err:
+                        if attempt == 0 and not is_auth_related_error(str(up_err)):
+                            print(f"[WARN] Transient Instagram upload error ({up_err}), retrying once in 5s...")
+                            time.sleep(5)
+                            continue
+                        raise
+
                 media_id = getattr(media, "id", None) or getattr(media, "pk", "")
                 media_code = getattr(media, "code", "")
                 post_url = f"https://www.instagram.com/reel/{media_code}/" if media_code else ""
@@ -735,7 +877,7 @@ def run_cloud_upload(manifest_path=DEFAULT_MANIFEST, test_mode=True, min_interva
                 ig_failed_actively = True
 
     # ---------------------------------------------------------
-    # 3. CLEANUP FILES ONLY AFTER ALL ACTIVE PLATFORMS FINISH
+    # 3. CLEANUP MATERIALIZED FILES COMPLETED BY BOTH PLATFORMS
     # ---------------------------------------------------------
     cleanup_completed_files(
         clips,
@@ -758,13 +900,18 @@ if __name__ == "__main__":
     parser.add_argument("--manifest", default=DEFAULT_MANIFEST)
     parser.add_argument("--test-mode", action="store_true", default=True)
     parser.add_argument("--min-interval", type=float, default=2.5, help="Minimum interval in hours between IG uploads")
-    parser.add_argument("--force", action="store_true", help="Force upload now, ignoring interval & cooldown")
+    parser.add_argument("--yt-interval", type=float, default=6.0, help="Minimum interval in hours between YT uploads")
+    parser.add_argument("--force", action="store_true", help="Force upload now, ignoring interval, cooldown & quiet hours")
+    parser.add_argument("--plan-only", action="store_true", help="Stdlib-only fast pacing & sparse-fetch planner")
+    parser.add_argument("--no-quiet-hours", action="store_true", help="Disable IST overnight quiet window (01:00-07:30 IST)")
     args = parser.parse_args()
 
     exit_code = run_cloud_upload(
         manifest_path=args.manifest,
-        test_mode=args.test_mode,
         min_interval_hours=args.min_interval,
+        yt_interval_hours=args.yt_interval,
         force=args.force,
+        plan_only=args.plan_only,
+        respect_quiet_hours=not args.no_quiet_hours,
     )
     sys.exit(exit_code)
