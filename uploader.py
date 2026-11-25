@@ -41,6 +41,13 @@ IG_AUTH_COOLDOWN_HOURS = 6.0
 IST_TZ = timezone(timedelta(hours=5, minutes=30))
 QUIET_START_HOUR_IST = 1.0   # 01:00 AM IST
 QUIET_END_HOUR_IST = 7.5     # 07:30 AM IST
+YT_PEAK_START_HOUR_IST = 17.5  # 05:30 PM IST (India prime evening Shorts window)
+YT_PEAK_END_HOUR_IST = 22.5    # 10:30 PM IST
+PLAYLIST_BY_PILLAR = {
+    "gameplay": "PLZ-j05R9sLtw",
+    "comedy": "PLRdva2Nr33t8",
+    "podcast": "PLMYF9fyZx174",
+}
 
 
 def safe_basename(path_str):
@@ -190,7 +197,24 @@ def in_quiet_hours_ist(now_utc):
     return QUIET_START_HOUR_IST <= hour_float < QUIET_END_HOUR_IST, now_ist
 
 
-def evaluate_schedules(clips, ig_results, yt_results, min_interval_hours, yt_interval_hours, force, respect_quiet_hours, now_utc, auth_fp):
+def in_yt_peak_window_ist(now_utc):
+    now_ist = now_utc.astimezone(IST_TZ)
+    hour_float = now_ist.hour + now_ist.minute / 60.0
+    return YT_PEAK_START_HOUR_IST <= hour_float < YT_PEAK_END_HOUR_IST, now_ist
+
+
+def evaluate_schedules(
+    clips,
+    ig_results,
+    yt_results,
+    min_interval_hours,
+    yt_interval_hours,
+    force,
+    respect_quiet_hours,
+    now_utc,
+    auth_fp,
+    respect_yt_peak=True,
+):
     quiet_active, now_ist = in_quiet_hours_ist(now_utc)
     if quiet_active and respect_quiet_hours and not force:
         print(
@@ -204,15 +228,19 @@ def evaluate_schedules(clips, ig_results, yt_results, min_interval_hours, yt_int
     should_upload_yt = False
     yt_reason = "No YOUTUBE_TOKEN configured"
     if has_yt_token:
-        should_upload_yt = True
-        yt_reason = "Eligible"
-        if not force and yt_results:
-            last_yt_ts = parse_iso_timestamp(yt_results[-1].get("timestamp", ""))
-            if last_yt_ts:
-                elapsed_yt = (now_utc.timestamp() - last_yt_ts.timestamp()) / 3600.0
-                if elapsed_yt < yt_interval_hours:
-                    should_upload_yt = False
-                    yt_reason = f"Pacing hold ({elapsed_yt:.1f}h / {yt_interval_hours:.1f}h)"
+        yt_peak_ok, _ = in_yt_peak_window_ist(now_utc)
+        if respect_yt_peak and not force and not yt_peak_ok:
+            yt_reason = f"Waiting for India peak evening (17:30-22:30 IST, now {now_ist.strftime('%H:%M')})"
+        else:
+            should_upload_yt = True
+            yt_reason = "Eligible"
+            if not force and yt_results:
+                last_yt_ts = parse_iso_timestamp(yt_results[-1].get("timestamp", ""))
+                if last_yt_ts:
+                    elapsed_yt = (now_utc.timestamp() - last_yt_ts.timestamp()) / 3600.0
+                    if elapsed_yt < yt_interval_hours:
+                        should_upload_yt = False
+                        yt_reason = f"Pacing hold ({elapsed_yt:.1f}h / {yt_interval_hours:.1f}h)"
 
     # Instagram eligibility check (pure local state, zero network calls)
     should_upload_ig = True
@@ -336,9 +364,10 @@ def get_youtube_client():
         from googleapiclient.discovery import build
 
         token_data = json.loads(token_str)
-        scopes = [
+        scopes = token_data.get("scopes") or [
             "https://www.googleapis.com/auth/youtube.upload",
             "https://www.googleapis.com/auth/youtube.readonly",
+            "https://www.googleapis.com/auth/youtube.force-ssl",
         ]
         creds = Credentials.from_authorized_user_info(token_data, scopes)
         if not creds.valid and creds.refresh_token:
@@ -536,58 +565,62 @@ def upload_youtube_short(youtube, video_path, clip_data):
 
     clean_title = raw_title.replace("GTA 6 - ", "").replace("GTA6 - ", "").strip()
     clean_title = re.sub(r"#shorts\b", "", clean_title, flags=re.IGNORECASE).strip()
-    if len(clean_title) > 48:
-        clean_title = clean_title[:45].rstrip() + "..."
-    title = f"{clean_title} #shorts"
-
-    raw_desc = (
-        clip_data.get("youtube_description_final", "")
-        or clip_data.get("tiktok_caption_final", "")
-        or clean_title
-    )
-    clean_desc_lines = [
-        l
-        for l in raw_desc.splitlines()
-        if l.strip()
-        and not l.strip().startswith("#")
-        and "✈️" not in l
-        and "📌" not in l
-        and "━━" not in l
-        and "Subscribe" not in l
-    ]
-    hook_desc = "\n".join(clean_desc_lines[:3]).strip() or clean_title
+    if len(clean_title) > 70:
+        cut = clean_title[:68]
+        clean_title = (cut.rsplit(" ", 1)[0] if " " in cut else cut).rstrip(" ,:-")
+    title = clean_title
 
     if "comedy" in content_type:
+        pillar = "comedy"
         category_id = str(clip_data.get("category_id") or "23")
-        niche_tags = ["Standup Comedy", "Indian Comedy", "Comedy Shorts", "Viral Comedy", "Hindi Standup"]
-        desc_hashtags = "#Shorts #Comedy #StandupComedy"
-        channel_hook = "Subscribe to @bubucreates-p3c for daily viral standup & comedy moments!"
+        niche_tags = ["Indian Standup", "Comedy Shorts", "Hindi Comedy", "Standup Comedy", "Viral Comedy"]
+        desc_hashtags = "#Shorts #StandupComedy #IndianComedy"
+        channel_hook = "Subscribe to @bubucreates-p3c for daily viral Indian standup comedy Shorts!"
     elif "podcast" in content_type:
+        pillar = "podcast"
         category_id = str(clip_data.get("category_id") or "24")
-        niche_tags = ["Podcast", "Indian Podcast", "Podcast Highlights", "Motivation", "Hindi Podcast"]
-        desc_hashtags = "#Shorts #Podcast #Inspiration"
-        channel_hook = "Subscribe to @bubucreates-p3c for daily life insights & podcast highlights!"
+        niche_tags = ["Hindi Podcast", "Indian Podcast", "Podcast Shorts", "Motivation", "Life Lessons"]
+        desc_hashtags = "#Shorts #Podcast #HindiPodcast"
+        channel_hook = "Subscribe to @bubucreates-p3c for daily life insights & podcast Shorts!"
     else:
+        pillar = "gameplay"
         category_id = str(clip_data.get("category_id") or "20")
-        niche_tags = ["Gaming", "Gaming Shorts", "GTA 6", "GTA 6 Gameplay", "Vice City"]
-        desc_hashtags = "#Shorts #Gaming #GTA6"
-        channel_hook = "Subscribe to @bubucreates-p3c for daily GTA 6 gameplay & viral moments!"
+        niche_tags = ["GTA 6", "GTA 6 Gameplay", "Indian Gaming", "Gaming Shorts", "Vice City"]
+        desc_hashtags = "#Shorts #GTA6 #IndianGaming"
+        channel_hook = "Subscribe to @bubucreates-p3c for daily GTA 6 gameplay & viral gaming Shorts!"
 
+    # Preserve pre-built YouTube SEO description if already cleanly formatted with #Shorts
+    pre_desc = (clip_data.get("youtube_description_final") or "").strip()
+    if pre_desc and "#shorts" in pre_desc.lower() and "━━" not in pre_desc and "✈️" not in pre_desc:
+        seo_description = pre_desc
+    else:
+        raw_desc = pre_desc or clip_data.get("tiktok_caption_final", "") or clean_title
+        clean_desc_lines = [
+            l.strip()
+            for l in raw_desc.splitlines()
+            if l.strip()
+            and not l.strip().startswith("#")
+            and "✈️" not in l
+            and "📌" not in l
+            and "━━" not in l
+            and "Subscribe" not in l
+        ]
+        hook_desc = "\n".join(clean_desc_lines[:2]).strip() or clean_title
+        seo_description = f"""{hook_desc}
+
+{channel_hook}
+
+{desc_hashtags}""".strip()
+
+    # Put creator-specific tags FIRST, backfill with niche tags up to 10
     clip_tags = clip_data.get("youtube_tags_final") or clip_data.get("tags") or []
-    final_tags = list(niche_tags)
-    for ct in clip_tags:
-        ct_clean = str(ct).replace("#", "").strip()
-        if ct_clean and ct_clean.lower() not in [t.lower() for t in final_tags]:
-            final_tags.append(ct_clean)
+    final_tags = []
+    for t in list(clip_tags) + niche_tags:
+        tc = str(t).replace("#", "").strip()
+        if tc and tc.lower() not in {x.lower() for x in final_tags}:
+            final_tags.append(tc)
         if len(final_tags) >= 10:
             break
-
-    seo_description = f"""{hook_desc}
-
-🔔 {channel_hook}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-{desc_hashtags}""".strip()
 
     default_lang = clip_data.get("default_language", "hi")
     default_audio_lang = clip_data.get("default_audio_language", "hi")
@@ -626,6 +659,23 @@ def upload_youtube_short(youtube, video_path, clip_data):
     video_id = response.get("id")
     yt_url = f"https://youtube.com/shorts/{video_id}"
     print(f"[SUCCESS] YouTube Short Live: {yt_url}")
+
+    pl_id = PLAYLIST_BY_PILLAR.get(pillar)
+    if pl_id and video_id:
+        try:
+            youtube.playlistItems().insert(
+                part="snippet",
+                body={
+                    "snippet": {
+                        "playlistId": pl_id,
+                        "resourceId": {"kind": "youtube#video", "videoId": video_id},
+                    }
+                },
+            ).execute()
+            print(f"   Added Short {video_id} to {pillar} playlist ({pl_id})")
+        except Exception as pe:
+            print(f"[WARN] Could not add Short to playlist ({pl_id}): {pe}")
+
     return {"video_id": video_id, "url": yt_url, "title": title}
 
 
@@ -683,10 +733,11 @@ def cleanup_completed_files(clips, ig_published_videos, ig_published_titles, yt_
 def run_cloud_upload(
     manifest_path=DEFAULT_MANIFEST,
     min_interval_hours=2.5,
-    yt_interval_hours=6.0,
+    yt_interval_hours=18.0,
     force=False,
     plan_only=False,
     respect_quiet_hours=True,
+    respect_yt_peak=True,
 ):
     if not os.path.exists(manifest_path):
         print(f"[ERR] Manifest not found: {manifest_path}")
@@ -733,6 +784,7 @@ def run_cloud_upload(
         respect_quiet_hours,
         now_utc,
         auth_fp,
+        respect_yt_peak=respect_yt_peak,
     )
 
     yt_next = find_next_clip(clips, yt_published_videos, yt_published_titles, available_files) if should_upload_yt else None
@@ -900,10 +952,11 @@ if __name__ == "__main__":
     parser.add_argument("--manifest", default=DEFAULT_MANIFEST)
     parser.add_argument("--test-mode", action="store_true", default=True)
     parser.add_argument("--min-interval", type=float, default=2.5, help="Minimum interval in hours between IG uploads")
-    parser.add_argument("--yt-interval", type=float, default=6.0, help="Minimum interval in hours between YT uploads")
+    parser.add_argument("--yt-interval", type=float, default=18.0, help="Minimum interval in hours between YT uploads")
     parser.add_argument("--force", action="store_true", help="Force upload now, ignoring interval, cooldown & quiet hours")
     parser.add_argument("--plan-only", action="store_true", help="Stdlib-only fast pacing & sparse-fetch planner")
     parser.add_argument("--no-quiet-hours", action="store_true", help="Disable IST overnight quiet window (01:00-07:30 IST)")
+    parser.add_argument("--no-yt-peak-window", action="store_true", help="Allow YT uploads outside 17:30-22:30 IST prime evening")
     args = parser.parse_args()
 
     exit_code = run_cloud_upload(
@@ -913,5 +966,6 @@ if __name__ == "__main__":
         force=args.force,
         plan_only=args.plan_only,
         respect_quiet_hours=not args.no_quiet_hours,
+        respect_yt_peak=not args.no_yt_peak_window,
     )
     sys.exit(exit_code)
